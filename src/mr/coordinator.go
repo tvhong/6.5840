@@ -7,10 +7,10 @@ import "net/rpc"
 import "net/http"
 
 type Coordinator struct {
-	// Your definitions here.
 	todoTasks []Task
-	inprogressTasks []Task
+	inprogressTasks map[int]Task
 	completedTasks []Task
+	allMapTasksCompleted bool
 }
 
 // Your code here -- RPC handlers for the worker to call.
@@ -27,11 +27,16 @@ func (c *Coordinator) Example(args *ExampleArgs, reply *ExampleReply) error {
 
 func (c *Coordinator) GetTask(request *GetTaskRequest, reply *GetTaskReply) error {
 	//reply.task
+	// Returns the first available task
+	// Unless we are waiting for all map tasks to complete
+	// Remove task from todoTasks and add it to inprogressTasks
+
 	return nil
 }
 
 func (c *Coordinator) CompleteTask(request *CompleteTaskRequest, reply *CompleteTaskReply) error {
 	//reply.Y = args.X + 1
+	// Remove task from inprogressTasks and add it to completedTasks
 	return nil
 }
 
@@ -55,12 +60,13 @@ func (c *Coordinator) Done() bool {
 //
 func MakeCoordinator(files []string, nReduce int) *Coordinator {
 	c := Coordinator{}
-	c.initPendingTasks(files, nReduce)
+	c.initTodos(files, nReduce)
+	c.allMapTasksCompleted = false
 	c.server()
 	return &c
 }
 
-func (c *Coordinator) initPendingTasks(files []string, nReduce int) {
+func (c *Coordinator) initTodos(files []string, nReduce int) {
 	taskId := 0
 	for _, file:= range(files) {
 		task := Task{}
