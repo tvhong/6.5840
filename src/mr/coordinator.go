@@ -1,5 +1,6 @@
 package mr
 
+import "fmt"
 import "log"
 import "net"
 import "os"
@@ -18,7 +19,7 @@ type Task struct {
 	taskId int
 
 	// Fields for MapTask
-	inputFileNames []string
+	inputFileName string
 	nReduce int
 
 	// Fields for ReduceTask
@@ -27,7 +28,8 @@ type Task struct {
 
 type Coordinator struct {
 	// Your definitions here.
-	tasks []Task
+	pendingTasks []Task
+	completedTasks []Task
 }
 
 // Your code here -- RPC handlers for the worker to call.
@@ -80,8 +82,29 @@ func (c *Coordinator) Done() bool {
 func MakeCoordinator(files []string, nReduce int) *Coordinator {
 	c := Coordinator{}
 
-	// Your code here.
+	taskId := 0
+	for _, file:= range(files) {
+		task := Task{}
+		task.taskType = MapTask
+		task.taskId = taskId
+		task.inputFileName = file
+		task.nReduce = nReduce
+		c.pendingTasks = append(c.pendingTasks, task)
 
+		taskId += 1
+	}
+
+	for i := 0; i < nReduce; i++ {
+		task := Task{}
+		task.taskType = ReduceTask
+		task.taskId = taskId
+		task.reduceId = i
+		c.pendingTasks = append(c.pendingTasks, task)
+
+		taskId += 1
+	}
+
+	fmt.Println(len(c.pendingTasks))
 
 	c.server()
 	return &c
