@@ -80,7 +80,7 @@ func (c *Coordinator) Done() bool {
 func MakeCoordinator(files []string, nReduce int) *Coordinator {
 	c := Coordinator{}
 	c.initTodos(files, nReduce)
-	c.allMapTasksCompleted = false
+	c.state = STATE_MAP
 	c.server()
 	return &c
 }

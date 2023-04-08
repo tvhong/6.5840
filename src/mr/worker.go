@@ -1,8 +1,8 @@
 package mr
 
-import "fmt"
-import "log"
-import "net/rpc"
+// import "fmt"
+// import "log"
+// import "net/rpc"
 import "hash/fnv"
 
 
@@ -43,6 +43,7 @@ func Worker(mapf func(string, string) []KeyValue,
 //
 // the RPC argument and reply types are defined in rpc.go.
 //
+/*
 func CallExample() {
 
 	// declare an argument structure.
@@ -89,3 +90,4 @@ func call(rpcname string, args interface{}, reply interface{}) bool {
 	fmt.Println(err)
 	return false
 }
+*/
