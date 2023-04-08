@@ -6,10 +6,28 @@ import "os"
 import "net/rpc"
 import "net/http"
 
+type TaskType string
+const (
+    MapTask TaskType = "map"
+    ReduceTask = "reduce"
+    ExitTask = "exit" 
+)
+
+type Task struct {
+	taskType TaskType
+	taskId int
+
+	// Fields for MapTask
+	inputFileNames []string
+	nReduce int
+
+	// Fields for ReduceTask
+	reduceId int
+}
 
 type Coordinator struct {
 	// Your definitions here.
-
+	tasks []Task
 }
 
 // Your code here -- RPC handlers for the worker to call.
@@ -46,7 +64,7 @@ func (c *Coordinator) server() {
 // if the entire job has finished.
 //
 func (c *Coordinator) Done() bool {
-	ret := false
+	ret := true
 
 	// Your code here.
 
