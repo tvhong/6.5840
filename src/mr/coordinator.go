@@ -22,15 +22,41 @@ type Coordinator struct {
 }
 
 func (c *Coordinator) GetTask(request *GetTaskRequest, reply *GetTaskReply) error {
-	// Returns the first available task
-	// Unless we are waiting for all map tasks to complete
-	// Remove task from todoTasks and add it to inprogressTasks
+	var task Task
+
+	if c.state == STATE_SHUTDOWN || c.state == STATE_DONE {
+		task = Task{}
+		task.taskType = ExitTask
+		reply.task = task
+		return nil
+	}
+
+	if len(c.todoTasks) == 0 {
+		if c.state != STATE_REDUCE {
+			log.Fatalf("When there is no todoTasks, the state should be REDUCE, SHUTDOWN, or DONE. Instead, it is %s", c.state)
+		}
+		task = Task{}
+		task.taskType = WaitTask
+		reply.task = task
+		return nil
+	}
+
+	if c.todoTasks[0].taskType == ReduceTask && c.state != STATE_REDUCE {
+		task = Task{}
+		task.taskType = WaitTask
+		reply.task = task
+		return nil
+	}
+
+	task = c.todoTasks[0]
+	reply.task = task
+	c.todoTasks = c.todoTasks[1:]
+	c.inprogressTasks[task.taskId] = task
 
 	return nil
 }
 
 func (c *Coordinator) CompleteTask(request *CompleteTaskRequest, reply *CompleteTaskReply) error {
-	//reply.Y = args.X + 1
 	// Remove task from inprogressTasks and add it to completedTasks
 	// Check if no more map task in todoTasks or inprogressTasks, set the state from MAP to REDUCE
 	// Check if no tasks in todoTasks and no tasks inprogressTasks, then the state from REDUCE to DONE

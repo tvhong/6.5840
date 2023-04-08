@@ -13,6 +13,7 @@ type TaskType string
 const (
     MapTask TaskType = "map"
     ReduceTask = "reduce"
+	WaitTask = "wait"
     ExitTask = "exit" 
 )
 
