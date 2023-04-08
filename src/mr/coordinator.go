@@ -10,6 +10,7 @@ type State int
 const (
 	STATE_MAP State = iota
 	STATE_REDUCE
+	STATE_SHUTDOWN
 	STATE_DONE
 )
 
@@ -18,18 +19,6 @@ type Coordinator struct {
 	inprogressTasks map[int]Task
 	completedTasks []Task
 	state State
-}
-
-// Your code here -- RPC handlers for the worker to call.
-
-//
-// an example RPC handler.
-//
-// the RPC argument and reply types are defined in rpc.go.
-//
-func (c *Coordinator) Example(args *ExampleArgs, reply *ExampleReply) error {
-	reply.Y = args.X + 1
-	return nil
 }
 
 func (c *Coordinator) GetTask(request *GetTaskRequest, reply *GetTaskReply) error {
@@ -43,7 +32,8 @@ func (c *Coordinator) GetTask(request *GetTaskRequest, reply *GetTaskReply) erro
 func (c *Coordinator) CompleteTask(request *CompleteTaskRequest, reply *CompleteTaskReply) error {
 	//reply.Y = args.X + 1
 	// Remove task from inprogressTasks and add it to completedTasks
-	// Check if no tasks in todoTasks and no tasks inprogressTasks, then set done flag to True
+	// Check if no more map task in todoTasks or inprogressTasks, set the state from MAP to REDUCE
+	// Check if no tasks in todoTasks and no tasks inprogressTasks, then the state from REDUCE to DONE
 	return nil
 }
 
