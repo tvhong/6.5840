@@ -27,7 +27,8 @@ type Task struct {
 
 type Coordinator struct {
 	// Your definitions here.
-	pendingTasks []Task
+	todoTasks []Task
+	inprogressTasks []Task
 	completedTasks []Task
 }
 
@@ -93,7 +94,7 @@ func (c *Coordinator) initPendingTasks(files []string, nReduce int) {
 		task.taskId = taskId
 		task.inputFileName = file
 		task.nReduce = nReduce
-		c.pendingTasks = append(c.pendingTasks, task)
+		c.todoTasks = append(c.todoTasks, task)
 
 		taskId += 1
 	}
@@ -103,10 +104,10 @@ func (c *Coordinator) initPendingTasks(files []string, nReduce int) {
 		task.taskType = ReduceTask
 		task.taskId = taskId
 		task.reduceId = i
-		c.pendingTasks = append(c.pendingTasks, task)
+		c.todoTasks = append(c.todoTasks, task)
 
 		taskId += 1
 	}
 
-	printLn(len(c.pendingTasks))
+	printLn(len(c.todoTasks))
 }
