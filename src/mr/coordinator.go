@@ -1,6 +1,5 @@
 package mr
 
-import "fmt"
 import "log"
 import "net"
 import "os"
@@ -109,5 +108,5 @@ func (c *Coordinator) initPendingTasks(files []string, nReduce int) {
 		taskId += 1
 	}
 
-	fmt.Println(len(c.pendingTasks))
+	printLn(len(c.pendingTasks))
 }
