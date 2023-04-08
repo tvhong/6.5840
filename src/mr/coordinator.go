@@ -44,6 +44,15 @@ func (c *Coordinator) Example(args *ExampleArgs, reply *ExampleReply) error {
 	return nil
 }
 
+func (c *Coordinator) GetTask(request *GetTaskRequest, reply *GetTaskReply) error {
+	//reply.task
+	return nil
+}
+
+func (c *Coordinator) CompleteTask(request *CompleteTaskRequest, reply *CompleteTaskReply) error {
+	//reply.Y = args.X + 1
+	return nil
+}
 
 //
 // main/mrcoordinator.go calls Done() periodically to find out
