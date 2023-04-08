@@ -9,6 +9,25 @@ package mr
 import "os"
 import "strconv"
 
+type TaskType string
+const (
+    MapTask TaskType = "map"
+    ReduceTask = "reduce"
+    ExitTask = "exit" 
+)
+
+type Task struct {
+	taskType TaskType
+	taskId int
+
+	// Fields for MapTask
+	inputFileName string
+	nReduce int
+
+	// Fields for ReduceTask
+	reduceId int
+}
+
 //
 // example to show how to declare the arguments
 // and reply for an RPC.

@@ -6,25 +6,6 @@ import "os"
 import "net/rpc"
 import "net/http"
 
-type TaskType string
-const (
-    MapTask TaskType = "map"
-    ReduceTask = "reduce"
-    ExitTask = "exit" 
-)
-
-type Task struct {
-	taskType TaskType
-	taskId int
-
-	// Fields for MapTask
-	inputFileName string
-	nReduce int
-
-	// Fields for ReduceTask
-	reduceId int
-}
-
 type Coordinator struct {
 	// Your definitions here.
 	todoTasks []Task
