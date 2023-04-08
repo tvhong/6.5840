@@ -6,11 +6,18 @@ import "os"
 import "net/rpc"
 import "net/http"
 
+type State int
+const (
+	STATE_MAP State = iota
+	STATE_REDUCE
+	STATE_DONE
+)
+
 type Coordinator struct {
 	todoTasks []Task
 	inprogressTasks map[int]Task
 	completedTasks []Task
-	allMapTasksCompleted bool
+	state State
 }
 
 // Your code here -- RPC handlers for the worker to call.
@@ -26,7 +33,6 @@ func (c *Coordinator) Example(args *ExampleArgs, reply *ExampleReply) error {
 }
 
 func (c *Coordinator) GetTask(request *GetTaskRequest, reply *GetTaskReply) error {
-	//reply.task
 	// Returns the first available task
 	// Unless we are waiting for all map tasks to complete
 	// Remove task from todoTasks and add it to inprogressTasks
@@ -37,6 +43,7 @@ func (c *Coordinator) GetTask(request *GetTaskRequest, reply *GetTaskReply) erro
 func (c *Coordinator) CompleteTask(request *CompleteTaskRequest, reply *CompleteTaskReply) error {
 	//reply.Y = args.X + 1
 	// Remove task from inprogressTasks and add it to completedTasks
+	// Check if no tasks in todoTasks and no tasks inprogressTasks, then set done flag to True
 	return nil
 }
 
@@ -45,12 +52,8 @@ func (c *Coordinator) CompleteTask(request *CompleteTaskRequest, reply *Complete
 // if the entire job has finished.
 //
 func (c *Coordinator) Done() bool {
-	ret := true
-
-	// Your code here.
-
-
-	return ret
+	// TODO: wait 10s for workers to ask for done task
+	return c.state == STATE_DONE
 }
 
 //
