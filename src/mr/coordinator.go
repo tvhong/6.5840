@@ -81,7 +81,12 @@ func (c *Coordinator) Done() bool {
 //
 func MakeCoordinator(files []string, nReduce int) *Coordinator {
 	c := Coordinator{}
+	c.initPendingTasks(files, nReduce)
+	c.server()
+	return &c
+}
 
+func (c *Coordinator) initPendingTasks(files []string, nReduce int) {
 	taskId := 0
 	for _, file:= range(files) {
 		task := Task{}
@@ -105,7 +110,4 @@ func MakeCoordinator(files []string, nReduce int) *Coordinator {
 	}
 
 	fmt.Println(len(c.pendingTasks))
-
-	c.server()
-	return &c
 }
