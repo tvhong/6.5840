@@ -1,9 +1,9 @@
 package mr
 
 import "fmt"
+import "io"
 import "log"
-// import "ioutil"
-// import "os"
+import "os"
 import "net/rpc"
 import "hash/fnv"
 
@@ -14,16 +14,6 @@ import "hash/fnv"
 type KeyValue struct {
 	Key   string
 	Value string
-}
-
-//
-// use ihash(key) % NReduce to choose the reduce
-// task number for each KeyValue emitted by Map.
-//
-func ihash(key string) int {
-	h := fnv.New32a()
-	h.Write([]byte(key))
-	return int(h.Sum32() & 0x7fffffff)
 }
 
 type Operator struct {
@@ -60,7 +50,67 @@ func (o *Operator) handleTask(task Task) {
 }
 
 func (o *Operator) handleMap(task Task) {
+	filename := task.InputFileName
+	nReduce := task.NReduce
 
+	// Read the inputFile
+	file, err := os.Open(filename)
+	if err != nil {
+		log.Fatalf("cannot open %v", filename)
+	}
+	content, err := io.ReadAll(file)
+	if err != nil {
+		log.Fatalf("cannot read %v", filename)
+	}
+	file.Close()
+
+	kva := o.mapf(filename, string(content))
+	o.writeIntermediateFiles(kva, nReduce)
+}
+
+func (o *Operator) writeIntermediateFiles(kva []KeyValue, nReduce int) {
+	// open the file for append and write to the file
+	// get a lock (or create a coroutine for file writing) so writing to file doesn't conflict with another task
+	files := make(map[string]*os.File)
+	for i := 0; i < nReduce; i++ {
+		filename := o.getIntermediateFilename2(i)
+		file, err := os.OpenFile(filename, os.O_CREATE|os.O_WRONLY, 0644)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		file.WriteString("Hello\n")
+		fmt.Fprintln(file, "World")
+
+		files[filename] = file
+
+		defer file.Close()
+	}
+
+
+	// for _, kv := range(kva) {
+
+	// }
+
+}
+
+func (o *Operator) getIntermediateFilename(kv KeyValue, nReduce int) string {
+	reduceId := o.ihash(kv.Key) % nReduce
+	return fmt.Sprintf("mr-inter-%d", reduceId)
+}
+
+func (o *Operator) getIntermediateFilename2(reduceId int) string {
+	return fmt.Sprintf("mr-inter-%d", reduceId)
+}
+
+//
+// use ihash(key) % NReduce to choose the reduce
+// task number for each KeyValue emitted by Map.
+//
+func (o *Operator) ihash(key string) int {
+	h := fnv.New32a()
+	h.Write([]byte(key))
+	return int(h.Sum32() & 0x7fffffff)
 }
 
 //
@@ -103,26 +153,3 @@ func Worker(mapf func(string, string) []KeyValue,
 	operator := makeOperator(mapf, reducef)
 	operator.server()
 }
-
-// func handleMap(task Task) {
-// 	filename := task.InputFileName
-// 	nReduce := task.NReduce
-// 
-// 	// Read the inputFile
-// 	file, err := os.Open(filename)
-// 	if err != nil {
-// 		log.Fatalf("cannot open %v", filename)
-// 	}
-// 	content, err := ioutil.ReadAll(file)
-// 	if err != nil {
-// 		log.Fatalf("cannot read %v", filename)
-// 	}
-// 	file.Close()
-// 	kva := mapf(filename, string(content))
-// 	intermediate = append(intermediate, kva...)
-// 	// convert each line to key, value pair
-// 	// hash the key to get reduceId
-// 	// open the file for append and write to the file
-// 	// get a lock (or create a coroutine for file writing) so writing to file doesn't conflict with another task
-// 
-// }
