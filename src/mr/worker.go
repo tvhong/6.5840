@@ -5,8 +5,9 @@ import "fmt"
 import "io"
 import "log"
 import "os"
-import "strings"
 import "regexp"
+import "strings"
+import "time"
 import "net/rpc"
 import "hash/fnv"
 
@@ -72,6 +73,8 @@ func (o *Operator) handleTask(task Task) {
 		o.handleMap(task)
 	} else if task.TaskType == ReduceTask {
 		o.handleReduce(task)
+	} else if task.TaskType == WaitTask {
+		o.handleWait(task)
 	} else if task.TaskType == ExitTask {
 		o.handleExit(task)
 	}
@@ -125,6 +128,10 @@ func (o *Operator) handleReduce(task Task) {
 	o.writeReduceResults(kva)
 
 	o.callCompleteTask(task.TaskId)
+}
+
+func (o *Operator) handleWait(task Task) {
+	time.Sleep(time.Second)
 }
 
 func (o *Operator) handleExit(task Task) {
