@@ -32,7 +32,8 @@ type Operator struct {
 }
 
 func (o *Operator) server() {
-	o.getTask()
+	task := o.getTask()
+	o.handleTask(task)
 }
 
 func (o *Operator) getTask() Task {
@@ -50,6 +51,16 @@ func (o *Operator) getTask() Task {
 		task.TaskType = ExitTask
 		return task
 	}
+}
+
+func (o *Operator) handleTask(task Task) {
+	if task.TaskType == MapTask {
+		o.handleMap(task)
+	}
+}
+
+func (o *Operator) handleMap(task Task) {
+
 }
 
 //
