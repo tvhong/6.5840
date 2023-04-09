@@ -65,15 +65,14 @@ func (o *Operator) handleMap(task Task) {
 	file.Close()
 
 	kva := o.mapf(filename, string(content))
-	o.writeIntermediateFiles(kva, nReduce)
+	o.writeInterFiles(kva, nReduce)
 }
 
-func (o *Operator) writeIntermediateFiles(kva []KeyValue, nReduce int) {
-	// open the file for append and write to the file
-	// get a lock (or create a coroutine for file writing) so writing to file doesn't conflict with another task
+func (o *Operator) writeInterFiles(kva []KeyValue, nReduce int) {
 	files := make(map[string]*os.File)
 	for i := 0; i < nReduce; i++ {
-		filename := o.getIntermediateFilename2(i)
+		filename := o.getInterFilename(i)
+		// TODO: use append, use lock (or coroutine for file writing)
 		file, err := os.OpenFile(filename, os.O_CREATE|os.O_WRONLY, 0644)
 		if err != nil {
 			log.Fatal(err)
@@ -87,19 +86,18 @@ func (o *Operator) writeIntermediateFiles(kva []KeyValue, nReduce int) {
 		defer file.Close()
 	}
 
-
-	// for _, kv := range(kva) {
-
-	// }
-
+	for _, kv := range(kva) {
+		filename := o.getInterFilename(o.getReduceId(kv, nReduce))
+		file := files[filename]
+		fmt.Fprintf(file, "%v %v\n", kv.Key, kv.Value)
+	}
 }
 
-func (o *Operator) getIntermediateFilename(kv KeyValue, nReduce int) string {
-	reduceId := o.ihash(kv.Key) % nReduce
-	return fmt.Sprintf("mr-inter-%d", reduceId)
+func (o *Operator) getReduceId(kv KeyValue, nReduce int) int {
+	return o.ihash(kv.Key) % nReduce
 }
 
-func (o *Operator) getIntermediateFilename2(reduceId int) string {
+func (o *Operator) getInterFilename(reduceId int) string {
 	return fmt.Sprintf("mr-inter-%d", reduceId)
 }
 
