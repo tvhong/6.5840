@@ -2,6 +2,8 @@ package mr
 
 import "fmt"
 import "log"
+// import "ioutil"
+// import "os"
 import "net/rpc"
 import "hash/fnv"
 
@@ -24,14 +26,32 @@ func ihash(key string) int {
 	return int(h.Sum32() & 0x7fffffff)
 }
 
+type Operator struct {
+	mapf func(string, string) []KeyValue
+	reducef func(string, []string) string
+}
+
+func (o *Operator) server() {
+	CallGetTask()
+}
+
+func makeOperator(
+		mapf func(string, string) []KeyValue,
+		reducef func(string, []string) string) *Operator {
+	o := Operator{}
+	o.mapf = mapf
+	o.reducef = reducef
+
+	return &o
+}
 
 //
 // main/mrworker.go calls this function.
 //
 func Worker(mapf func(string, string) []KeyValue,
-	reducef func(string, []string) string) {
-
-	CallGetTask()
+		reducef func(string, []string) string) {
+	operator := makeOperator(mapf, reducef)
+	operator.server()
 }
 
 func CallGetTask() {
@@ -43,6 +63,11 @@ func CallGetTask() {
 		fmt.Printf("Worker received Task: %s\n", reply.Task)
 	} else {
 		log.Fatalf("Call failed! Assuming coordinator exited. Exiting worker.")
+	}
+
+	task := reply.Task
+	if task.TaskType == MapTask {
+
 	}
 }
 
@@ -68,3 +93,26 @@ func call(rpcname string, args interface{}, reply interface{}) bool {
 	fmt.Println(err)
 	return false
 }
+
+// func handleMap(task Task) {
+// 	filename := task.InputFileName
+// 	nReduce := task.NReduce
+// 
+// 	// Read the inputFile
+// 	file, err := os.Open(filename)
+// 	if err != nil {
+// 		log.Fatalf("cannot open %v", filename)
+// 	}
+// 	content, err := ioutil.ReadAll(file)
+// 	if err != nil {
+// 		log.Fatalf("cannot read %v", filename)
+// 	}
+// 	file.Close()
+// 	kva := mapf(filename, string(content))
+// 	intermediate = append(intermediate, kva...)
+// 	// convert each line to key, value pair
+// 	// hash the key to get reduceId
+// 	// open the file for append and write to the file
+// 	// get a lock (or create a coroutine for file writing) so writing to file doesn't conflict with another task
+// 
+// }
