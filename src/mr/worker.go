@@ -32,7 +32,24 @@ type Operator struct {
 }
 
 func (o *Operator) server() {
-	CallGetTask()
+	o.getTask()
+}
+
+func (o *Operator) getTask() Task {
+	request := GetTaskRequest{}
+	reply := GetTaskReply{}
+
+	ok := call("Coordinator.GetTask", &request, &reply)
+	if ok {
+		fmt.Printf("Worker received Task: %s\n", reply.Task)
+		return reply.Task
+	} else {
+		fmt.Printf("Call failed! Assuming coordinator exited. Exiting worker.")
+
+		task := Task{}
+		task.TaskType = ExitTask
+		return task
+	}
 }
 
 func makeOperator(
@@ -52,23 +69,6 @@ func Worker(mapf func(string, string) []KeyValue,
 		reducef func(string, []string) string) {
 	operator := makeOperator(mapf, reducef)
 	operator.server()
-}
-
-func CallGetTask() {
-	request := GetTaskRequest{}
-	reply := GetTaskReply{}
-
-	ok := call("Coordinator.GetTask", &request, &reply)
-	if ok {
-		fmt.Printf("Worker received Task: %s\n", reply.Task)
-	} else {
-		log.Fatalf("Call failed! Assuming coordinator exited. Exiting worker.")
-	}
-
-	task := reply.Task
-	if task.TaskType == MapTask {
-
-	}
 }
 
 //
