@@ -25,7 +25,7 @@ func (c *Coordinator) GetTask(request *GetTaskRequest, reply *GetTaskReply) erro
 
 	if c.state == STATE_DONE {
 		task = Task{}
-		task.taskType = ExitTask
+		task.TaskType = ExitTask
 		reply.Task = task
 		return nil
 	}
@@ -35,14 +35,14 @@ func (c *Coordinator) GetTask(request *GetTaskRequest, reply *GetTaskReply) erro
 			log.Fatalf("When there is no todoTasks, the state should be REDUCE, or DONE. Instead, it is %s", c.state)
 		}
 		task = Task{}
-		task.taskType = WaitTask
+		task.TaskType = WaitTask
 		reply.Task = task
 		return nil
 	}
 
-	if c.todoTasks[0].taskType == ReduceTask && c.state != STATE_REDUCE {
+	if c.todoTasks[0].TaskType == ReduceTask && c.state != STATE_REDUCE {
 		task = Task{}
-		task.taskType = WaitTask
+		task.TaskType = WaitTask
 		reply.Task = task
 		return nil
 	}
@@ -50,7 +50,7 @@ func (c *Coordinator) GetTask(request *GetTaskRequest, reply *GetTaskReply) erro
 	task = c.todoTasks[0]
 	reply.Task = task
 	c.todoTasks = c.todoTasks[1:]
-	c.inprogressTasks[task.taskId] = task
+	c.inprogressTasks[task.TaskId] = task
 
 	return nil
 }
@@ -92,10 +92,10 @@ func (c *Coordinator) initTodos(files []string, nReduce int) {
 	taskId := 0
 	for _, file:= range(files) {
 		task := Task{}
-		task.taskType = MapTask
-		task.taskId = taskId
-		task.inputFileName = file
-		task.nReduce = nReduce
+		task.TaskType = MapTask
+		task.TaskId = taskId
+		task.InputFileName = file
+		task.NReduce = nReduce
 		c.todoTasks = append(c.todoTasks, task)
 
 		taskId += 1
@@ -103,9 +103,9 @@ func (c *Coordinator) initTodos(files []string, nReduce int) {
 
 	for i := 0; i < nReduce; i++ {
 		task := Task{}
-		task.taskType = ReduceTask
-		task.taskId = taskId
-		task.reduceId = i
+		task.TaskType = ReduceTask
+		task.TaskId = taskId
+		task.ReduceId = i
 		c.todoTasks = append(c.todoTasks, task)
 
 		taskId += 1

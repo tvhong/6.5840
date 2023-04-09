@@ -12,27 +12,27 @@ import "strconv"
 
 type TaskType string
 const (
-    MapTask TaskType = "map"
-    ReduceTask = "reduce"
+	MapTask TaskType = "map"
+	ReduceTask = "reduce"
 	WaitTask = "wait"
-    ExitTask = "exit" 
+	ExitTask = "exit" 
 )
 
 type Task struct {
-	taskType TaskType
-	taskId int
+	TaskType TaskType
+	TaskId int
 
 	// Fields for MapTask
-	inputFileName string
-	nReduce int
+	InputFileName string
+	NReduce int
 
 	// Fields for ReduceTask
-	reduceId int
+	ReduceId int
 }
 
 func (t Task) String() string {
-	return fmt.Sprintf("taskType: %s, taskId: %d, inputFileName: %s, nReduce: %d, reduceId: %d",
-		t.taskType, t.taskId, t.inputFileName, t.nReduce, t.reduceId)
+	return fmt.Sprintf("Task(TaskType: %s, TaskId: %d, InputFileName: %s, NReduce: %d, ReduceId: %d)",
+		t.TaskType, t.TaskId, t.InputFileName, t.NReduce, t.ReduceId)
 }
 
 type GetTaskRequest struct {
