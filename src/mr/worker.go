@@ -22,24 +22,40 @@ type Operator struct {
 }
 
 func (o *Operator) server() {
-	task := o.getTask()
+	task := o.callGetTask()
 	o.handleTask(task)
 }
 
-func (o *Operator) getTask() Task {
+func (o *Operator) callGetTask() Task {
 	request := GetTaskRequest{}
 	reply := GetTaskReply{}
 
 	ok := o.call("Coordinator.GetTask", &request, &reply)
 	if ok {
-		fmt.Printf("Worker received Task: %s\n", reply.Task)
+		printf("Worker received Task: %s\n", reply.Task)
 		return reply.Task
 	} else {
-		fmt.Printf("Call failed! Assuming coordinator exited. Exiting worker.")
+		printf("Call failed! Assuming coordinator exited. Exiting worker.")
 
 		task := Task{}
 		task.TaskType = ExitTask
 		return task
+	}
+}
+
+func (o *Operator) callCompleteTask(taskId int) bool {
+	request := CompleteTaskRequest{}
+	reply := CompleteTaskReply{}
+
+	request.TaskId = taskId
+
+	ok := o.call("Coordinator.CompleteTask", &request, &reply)
+	if ok {
+		printf("Worker completed task %d on coordinator\n", taskId)
+		return true
+	} else {
+		printf("Failed to send complete task. Maybe exit.")
+		return false
 	}
 }
 
@@ -53,7 +69,7 @@ func (o *Operator) handleMap(task Task) {
 	filename := task.InputFileName
 	nReduce := task.NReduce
 
-	// Read the inputFile
+	// TODO: extract to method
 	file, err := os.Open(filename)
 	if err != nil {
 		log.Fatalf("cannot open %v", filename)
@@ -66,6 +82,8 @@ func (o *Operator) handleMap(task Task) {
 
 	kva := o.mapf(filename, string(content))
 	o.writeMapResults(kva, nReduce)
+
+	o.callCompleteTask(task.TaskId)
 }
 
 func (o *Operator) writeMapResults(kva []KeyValue, nReduce int) {

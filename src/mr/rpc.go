@@ -43,7 +43,7 @@ type GetTaskReply struct {
 }
 
 type CompleteTaskRequest struct {
-	taskId int
+	TaskId int
 }
 
 type CompleteTaskReply struct {

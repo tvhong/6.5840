@@ -59,6 +59,7 @@ func (c *Coordinator) CompleteTask(request *CompleteTaskRequest, reply *Complete
 	// Remove task from inprogressTasks and add it to completedTasks
 	// Check if no more map task in todoTasks or inprogressTasks, set the state from MAP to REDUCE
 	// Check if no tasks in todoTasks and no tasks inprogressTasks, then the state from REDUCE to DONE
+	printf("[Coordinator] Worker completed task %d\n", request.TaskId)
 	return nil
 }
 
