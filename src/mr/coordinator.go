@@ -27,6 +27,7 @@ func (c *Coordinator) GetTask(request *GetTaskRequest, reply *GetTaskReply) erro
 		task = Task{}
 		task.TaskType = ExitTask
 		reply.Task = task
+		printLn("[Coordinator] GetTask returns ExitTask")
 		return nil
 	}
 
@@ -37,6 +38,7 @@ func (c *Coordinator) GetTask(request *GetTaskRequest, reply *GetTaskReply) erro
 		task = Task{}
 		task.TaskType = WaitTask
 		reply.Task = task
+		printLn("[Coordinator] GetTask returns WaitTask until all ReduceTasks complete")
 		return nil
 	}
 
@@ -44,6 +46,7 @@ func (c *Coordinator) GetTask(request *GetTaskRequest, reply *GetTaskReply) erro
 		task = Task{}
 		task.TaskType = WaitTask
 		reply.Task = task
+		printLn("[Coordinator] GetTask returns WaitTask until all MapTasks complete")
 		return nil
 	}
 
@@ -51,6 +54,8 @@ func (c *Coordinator) GetTask(request *GetTaskRequest, reply *GetTaskReply) erro
 	reply.Task = task
 	c.todoTasks = c.todoTasks[1:]
 	c.inprogressTasks[task.TaskId] = task
+
+	printf("[Coordinator] GetTask returns %s", task.TaskType)
 
 	return nil
 }
