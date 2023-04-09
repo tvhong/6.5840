@@ -1,5 +1,6 @@
 package mr
 
+import "errors"
 import "fmt"
 import "io"
 import "log"
@@ -21,27 +22,31 @@ type KeyValue struct {
 type Operator struct {
 	mapf func(string, string) []KeyValue
 	reducef func(string, []string) string
+	done bool
 }
 
 func (o *Operator) server() {
-	task := o.callGetTask()
-	o.handleTask(task)
+	for !o.done {
+		task, err := o.callGetTask()
+		if err == nil {
+			o.handleTask(task)
+		}
+	}
 }
 
-func (o *Operator) callGetTask() Task {
+func (o *Operator) callGetTask() (Task, error) {
 	request := GetTaskRequest{}
 	reply := GetTaskReply{}
 
 	ok := o.call("Coordinator.GetTask", &request, &reply)
 	if ok {
 		printf("Worker received Task: %s\n", reply.Task)
-		return reply.Task
+		return reply.Task, nil
 	} else {
 		printf("Call failed! Assuming coordinator exited. Exiting worker.")
+		o.done = true
 
-		task := Task{}
-		task.TaskType = ExitTask
-		return task
+		return Task{}, errors.New("Failed getting tasks")
 	}
 }
 
@@ -53,10 +58,11 @@ func (o *Operator) callCompleteTask(taskId int) bool {
 
 	ok := o.call("Coordinator.CompleteTask", &request, &reply)
 	if ok {
-		printf("Worker completed task %d on coordinator\n", taskId)
+		printf("Worker completed task %d\n", taskId)
 		return true
 	} else {
-		printf("Failed to send complete task. Maybe exit.")
+		printf("Failed to send complete task! Assuming coordinator exited. Exiting worker.")
+		o.done = true
 		return false
 	}
 }
@@ -220,6 +226,7 @@ func makeOperator(
 	o := Operator{}
 	o.mapf = mapf
 	o.reducef = reducef
+	o.done = false
 
 	return &o
 }
