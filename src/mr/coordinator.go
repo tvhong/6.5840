@@ -56,11 +56,45 @@ func (c *Coordinator) GetTask(request *GetTaskRequest, reply *GetTaskReply) erro
 }
 
 func (c *Coordinator) CompleteTask(request *CompleteTaskRequest, reply *CompleteTaskReply) error {
-	// Remove task from inprogressTasks and add it to completedTasks
-	// Check if no more map task in todoTasks or inprogressTasks, set the state from MAP to REDUCE
-	// Check if no tasks in todoTasks and no tasks inprogressTasks, then the state from REDUCE to DONE
-	printf("[Coordinator] Worker completed task %d\n", request.TaskId)
+	taskId := request.TaskId
+
+	printf("[Coordinator] Worker completed task %d\n", taskId)
+
+	task := c.inprogressTasks[taskId]
+	delete(c.inprogressTasks, taskId)
+	c.completedTasks = append(c.completedTasks, task)
+
+	if (c.state == STATE_MAP && !c.hasTodoOfType(MapTask) && !c.hasInProgressOfType(MapTask)) {
+		printLn("[Coordinator] Transition from STATE_MAP to STATE_REDUCE")
+		c.state = STATE_REDUCE
+	}
+
+	if (c.state == STATE_REDUCE && len(c.todoTasks) == 0 && len(c.inprogressTasks) == 0) {
+		printLn("[Coordinator] Transition from STATE_REDUCE to STATE_DONE")
+		c.state = STATE_DONE
+	}
+
 	return nil
+}
+
+func (c *Coordinator) hasTodoOfType(taskType TaskType) bool {
+	for _, task := range(c.todoTasks) {
+		if task.TaskType == taskType {
+			return true
+		}
+	}
+
+	return false
+}
+
+func (c *Coordinator) hasInProgressOfType(taskType TaskType) bool {
+	for _, task := range(c.inprogressTasks) {
+		if task.TaskType == taskType {
+			return true
+		}
+	}
+
+	return false
 }
 
 //
