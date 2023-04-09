@@ -72,6 +72,8 @@ func (o *Operator) handleTask(task Task) {
 		o.handleMap(task)
 	} else if task.TaskType == ReduceTask {
 		o.handleReduce(task)
+	} else if task.TaskType == ExitTask {
+		o.handleExit(task)
 	}
 }
 
@@ -123,6 +125,10 @@ func (o *Operator) handleReduce(task Task) {
 	o.writeReduceResults(kva)
 
 	o.callCompleteTask(task.TaskId)
+}
+
+func (o *Operator) handleExit(task Task) {
+	o.done = true
 }
 
 func (o *Operator) readFile(filename string) string {
