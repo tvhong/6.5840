@@ -26,7 +26,7 @@ func (c *Coordinator) GetTask(request *GetTaskRequest, reply *GetTaskReply) erro
 	if c.state == STATE_DONE {
 		task = Task{}
 		task.taskType = ExitTask
-		reply.task = task
+		reply.Task = task
 		return nil
 	}
 
@@ -36,19 +36,19 @@ func (c *Coordinator) GetTask(request *GetTaskRequest, reply *GetTaskReply) erro
 		}
 		task = Task{}
 		task.taskType = WaitTask
-		reply.task = task
+		reply.Task = task
 		return nil
 	}
 
 	if c.todoTasks[0].taskType == ReduceTask && c.state != STATE_REDUCE {
 		task = Task{}
 		task.taskType = WaitTask
-		reply.task = task
+		reply.Task = task
 		return nil
 	}
 
 	task = c.todoTasks[0]
-	reply.task = task
+	reply.Task = task
 	c.todoTasks = c.todoTasks[1:]
 	c.inprogressTasks[task.taskId] = task
 
@@ -79,12 +79,16 @@ func (c *Coordinator) Done() bool {
 func MakeCoordinator(files []string, nReduce int) *Coordinator {
 	c := Coordinator{}
 	c.initTodos(files, nReduce)
+	c.inprogressTasks = make(map[int]Task)
+	c.completedTasks = make([]Task, 0)
 	c.state = STATE_MAP
 	c.server()
 	return &c
 }
 
 func (c *Coordinator) initTodos(files []string, nReduce int) {
+	c.todoTasks = make([]Task, 0)
+
 	taskId := 0
 	for _, file:= range(files) {
 		task := Task{}

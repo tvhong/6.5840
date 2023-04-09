@@ -6,6 +6,7 @@ package mr
 // remember to capitalize all names.
 //
 
+import "fmt"
 import "os"
 import "strconv"
 
@@ -29,11 +30,16 @@ type Task struct {
 	reduceId int
 }
 
+func (t Task) String() string {
+	return fmt.Sprintf("taskType: %s, taskId: %d, inputFileName: %s, nReduce: %d, reduceId: %d",
+		t.taskType, t.taskId, t.inputFileName, t.nReduce, t.reduceId)
+}
+
 type GetTaskRequest struct {
 }
 
 type GetTaskReply struct {
-	task Task
+	Task Task
 }
 
 type CompleteTaskRequest struct {

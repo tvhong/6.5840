@@ -1,8 +1,8 @@
 package mr
 
-// import "fmt"
-// import "log"
-// import "net/rpc"
+import "fmt"
+import "log"
+import "net/rpc"
 import "hash/fnv"
 
 
@@ -35,7 +35,21 @@ func Worker(mapf func(string, string) []KeyValue,
 
 	// uncomment to send the Example RPC to the coordinator.
 	// CallExample()
+	CallGetTask()
+}
 
+func CallGetTask() {
+	request := GetTaskRequest{}
+	reply := GetTaskReply{}
+
+	ok := call("Coordinator.GetTask", &request, &reply)
+	if ok {
+		// reply.Y should be 100.
+		fmt.Printf("reply: %s\n", reply.Task)
+	} else {
+		// TODO: if failed to call, assume task done, exit
+		log.Fatalf("call failed!\n")
+	}
 }
 
 //
@@ -67,6 +81,7 @@ func CallExample() {
 		fmt.Printf("call failed!\n")
 	}
 }
+*/
 
 //
 // send an RPC request to the coordinator, wait for the response.
@@ -90,4 +105,3 @@ func call(rpcname string, args interface{}, reply interface{}) bool {
 	fmt.Println(err)
 	return false
 }
-*/
