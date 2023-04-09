@@ -69,7 +69,15 @@ func (o *Operator) handleMap(task Task) {
 	filename := task.InputFileName
 	nReduce := task.NReduce
 
-	// TODO: extract to method
+	content := o.readFile(filename)
+
+	kva := o.mapf(filename, content)
+	o.writeMapResults(kva, nReduce)
+
+	o.callCompleteTask(task.TaskId)
+}
+
+func (o *Operator) readFile(filename string) string {
 	file, err := os.Open(filename)
 	if err != nil {
 		log.Fatalf("cannot open %v", filename)
@@ -80,10 +88,7 @@ func (o *Operator) handleMap(task Task) {
 	}
 	file.Close()
 
-	kva := o.mapf(filename, string(content))
-	o.writeMapResults(kva, nReduce)
-
-	o.callCompleteTask(task.TaskId)
+	return string(content)
 }
 
 func (o *Operator) writeMapResults(kva []KeyValue, nReduce int) {
