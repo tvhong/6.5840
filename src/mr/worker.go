@@ -4,6 +4,8 @@ import "fmt"
 import "io"
 import "log"
 import "os"
+import "strings"
+import "regexp"
 import "net/rpc"
 import "hash/fnv"
 
@@ -62,6 +64,8 @@ func (o *Operator) callCompleteTask(taskId int) bool {
 func (o *Operator) handleTask(task Task) {
 	if task.TaskType == MapTask {
 		o.handleMap(task)
+	} else if task.TaskType == ReduceTask {
+		o.handleReduce(task)
 	}
 }
 
@@ -73,6 +77,44 @@ func (o *Operator) handleMap(task Task) {
 
 	kva := o.mapf(filename, content)
 	o.writeMapResults(kva, nReduce)
+
+	o.callCompleteTask(task.TaskId)
+}
+
+func (o *Operator) handleReduce(task Task) {
+	reduceId := task.ReduceId
+	filename := o.getInterFilename(reduceId)
+	content := o.readFile(filename)
+	lines := strings.Split(content, "\n")
+	printf("[Worker] len(lines): %d\n", len(lines))
+
+	// merge the values with same key together (map[string][]string)
+	keyToValues := make(map[string][]string)
+	for _, line := range(lines) {
+		match, _ := regexp.MatchString(".* .*", line)
+		if !match {
+			continue
+		}
+
+		pair := strings.SplitN(line, " ", 2)
+		kv := KeyValue{}
+		kv.Key, kv.Value = pair[0], pair[1]
+
+		_, ok := keyToValues[kv.Key]
+		if !ok {
+			keyToValues[kv.Key] = make([]string, 0)
+		}
+
+		keyToValues[kv.Key] = append(keyToValues[kv.Key], kv.Value)
+	}
+
+	kva := make([]KeyValue, 0)
+	for key, values := range(keyToValues) {
+		reducedValue := o.reducef(key, values)
+		kva = append(kva, KeyValue{key, reducedValue})
+	}
+
+	o.writeReduceResults(kva)
 
 	o.callCompleteTask(task.TaskId)
 }
@@ -101,9 +143,6 @@ func (o *Operator) writeMapResults(kva []KeyValue, nReduce int) {
 			log.Fatal(err)
 		}
 
-		file.WriteString("Hello\n")
-		fmt.Fprintln(file, "World")
-
 		files[filename] = file
 
 		defer file.Close()
@@ -112,6 +151,21 @@ func (o *Operator) writeMapResults(kva []KeyValue, nReduce int) {
 	for _, kv := range(kva) {
 		filename := o.getInterFilename(o.getReduceId(kv, nReduce))
 		file := files[filename]
+		// TODO: might need special separator
+		fmt.Fprintf(file, "%v %v\n", kv.Key, kv.Value)
+	}
+}
+
+func (o *Operator) writeReduceResults(kva []KeyValue) {
+	filename := o.getOutputFilename()
+	file, err := os.OpenFile(filename, os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	defer file.Close()
+
+	for _, kv := range(kva) {
 		fmt.Fprintf(file, "%v %v\n", kv.Key, kv.Value)
 	}
 }
@@ -122,6 +176,10 @@ func (o *Operator) getReduceId(kv KeyValue, nReduce int) int {
 
 func (o *Operator) getInterFilename(reduceId int) string {
 	return fmt.Sprintf("mr-inter-%d", reduceId)
+}
+
+func (o *Operator) getOutputFilename() string {
+	return "mr-out-0"
 }
 
 //
