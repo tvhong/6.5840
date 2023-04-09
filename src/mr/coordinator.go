@@ -6,12 +6,11 @@ import "os"
 import "net/rpc"
 import "net/http"
 
-type State int
+type State string
 const (
-	STATE_MAP State = iota
-	STATE_REDUCE
-	STATE_SHUTDOWN
-	STATE_DONE
+	STATE_MAP State = "state_map"
+	STATE_REDUCE = "state_reduce"
+	STATE_DONE = "state_done"
 )
 
 type Coordinator struct {
@@ -24,7 +23,7 @@ type Coordinator struct {
 func (c *Coordinator) GetTask(request *GetTaskRequest, reply *GetTaskReply) error {
 	var task Task
 
-	if c.state == STATE_SHUTDOWN || c.state == STATE_DONE {
+	if c.state == STATE_DONE {
 		task = Task{}
 		task.taskType = ExitTask
 		reply.task = task
@@ -33,7 +32,7 @@ func (c *Coordinator) GetTask(request *GetTaskRequest, reply *GetTaskReply) erro
 
 	if len(c.todoTasks) == 0 {
 		if c.state != STATE_REDUCE {
-			log.Fatalf("When there is no todoTasks, the state should be REDUCE, SHUTDOWN, or DONE. Instead, it is %s", c.state)
+			log.Fatalf("When there is no todoTasks, the state should be REDUCE, or DONE. Instead, it is %s", c.state)
 		}
 		task = Task{}
 		task.taskType = WaitTask
