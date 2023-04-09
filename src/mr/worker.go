@@ -40,11 +40,9 @@ func CallGetTask() {
 
 	ok := call("Coordinator.GetTask", &request, &reply)
 	if ok {
-		// reply.Y should be 100.
-		fmt.Printf("reply: %s\n", reply.Task)
+		fmt.Printf("Worker received Task: %s\n", reply.Task)
 	} else {
-		// TODO: if failed to call, assume task done, exit
-		log.Fatalf("call failed!\n")
+		log.Fatalf("Call failed! Assuming coordinator exited. Exiting worker.")
 	}
 }
 
