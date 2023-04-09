@@ -65,10 +65,10 @@ func (o *Operator) handleMap(task Task) {
 	file.Close()
 
 	kva := o.mapf(filename, string(content))
-	o.writeInterFiles(kva, nReduce)
+	o.writeMapResults(kva, nReduce)
 }
 
-func (o *Operator) writeInterFiles(kva []KeyValue, nReduce int) {
+func (o *Operator) writeMapResults(kva []KeyValue, nReduce int) {
 	files := make(map[string]*os.File)
 	for i := 0; i < nReduce; i++ {
 		filename := o.getInterFilename(i)
