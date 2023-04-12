@@ -9,15 +9,17 @@ package mr
 import "fmt"
 
 func printLn(args ...interface{}) {
-	DEBUG := true
-	if DEBUG {
+	if isDebug() {
 		fmt.Println(args...)
 	}
 }
 
 func printf(s string, args ...interface{}) {
-	DEBUG := true
-	if DEBUG {
+	if isDebug() {
 		fmt.Printf(s, args...)
 	}
+}
+
+func isDebug() bool {
+	return false
 }

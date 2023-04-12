@@ -4,6 +4,7 @@ import "log"
 import "fmt"
 import "net"
 import "os"
+import "sync"
 import "net/rpc"
 import "net/http"
 
@@ -19,9 +20,13 @@ type Coordinator struct {
 	inprogressTasks map[int]Task
 	completedTasks []Task
 	state State
+    mu sync.Mutex
 }
 
 func (c *Coordinator) GetTask(request *GetTaskRequest, reply *GetTaskReply) error {
+    c.mu.Lock()
+    defer c.mu.Unlock()
+
 	var task Task
 
 	if c.state == STATE_DONE {
@@ -62,6 +67,9 @@ func (c *Coordinator) GetTask(request *GetTaskRequest, reply *GetTaskReply) erro
 }
 
 func (c *Coordinator) CompleteTask(request *CompleteTaskRequest, reply *CompleteTaskReply) error {
+    c.mu.Lock()
+    defer c.mu.Unlock()
+
 	taskId := request.TaskId
 
 	printf("[Coordinator] Worker completed task %d\n", taskId)
