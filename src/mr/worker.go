@@ -156,8 +156,7 @@ func (o *Operator) writeMapResults(kva []KeyValue, nReduce int) {
 	files := make(map[string]*os.File)
 	for i := 0; i < nReduce; i++ {
 		filename := o.getInterFilename(i)
-		// TODO: use append, use lock (or coroutine for file writing)
-		file, err := os.OpenFile(filename, os.O_CREATE|os.O_WRONLY, 0644)
+		file, err := os.OpenFile(filename, os.O_CREATE|os.O_APPEND, 0644)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -177,7 +176,7 @@ func (o *Operator) writeMapResults(kva []KeyValue, nReduce int) {
 
 func (o *Operator) writeReduceResults(kva []KeyValue) {
 	filename := o.getOutputFilename()
-	file, err := os.OpenFile(filename, os.O_CREATE|os.O_WRONLY, 0644)
+	file, err := os.OpenFile(filename, os.O_CREATE|os.O_APPEND, 0644)
 	if err != nil {
 		log.Fatal(err)
 	}

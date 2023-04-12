@@ -107,7 +107,6 @@ func (c *Coordinator) hasInProgressOfType(taskType TaskType) bool {
 // if the entire job has finished.
 //
 func (c *Coordinator) Done() bool {
-	// TODO: wait 10s for workers to ask for done task
 	return c.state == STATE_DONE
 }
 
