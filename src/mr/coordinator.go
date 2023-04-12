@@ -119,8 +119,21 @@ func (c *Coordinator) hasInProgressOfType(taskType TaskType) bool {
 // if the entire job has finished.
 //
 func (c *Coordinator) Done() bool {
-	// TODO: check if inprogressTasks has been going on for too long
-	// If so, move it from inProgress to todoTasks
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	tasksToRemove := make([]Task, 0)
+	for _, task := range(c.inprogressTasks) {
+		if time.Now().Sub(task.StartTime) >= 10 * time.Second {
+			tasksToRemove = append(tasksToRemove, task)
+		}
+	}
+
+	for _, task := range(tasksToRemove) {
+		delete(c.inprogressTasks, task.TaskId)
+	}
+	c.todoTasks = append(tasksToRemove, c.todoTasks...)
+
 	return c.state == STATE_DONE
 }
 
