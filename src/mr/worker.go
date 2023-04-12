@@ -41,10 +41,10 @@ func (o *Operator) callGetTask() (Task, error) {
 
 	ok := o.call("Coordinator.GetTask", &request, &reply)
 	if ok {
-		printf("Worker received Task: %s\n", reply.Task)
+		printf("[Worker] Received Task: %s\n", reply.Task)
 		return reply.Task, nil
 	} else {
-		printf("Call failed! Assuming coordinator exited. Exiting worker.")
+		printf("[Worker] Call failed! Assuming coordinator exited. Exiting worker.")
 		o.done = true
 
 		return Task{}, errors.New("Failed getting tasks")
@@ -59,10 +59,10 @@ func (o *Operator) callCompleteTask(taskId int) bool {
 
 	ok := o.call("Coordinator.CompleteTask", &request, &reply)
 	if ok {
-		printf("Worker completed task %d\n", taskId)
+		printf("[Worker] Completed task %d\n", taskId)
 		return true
 	} else {
-		printf("Failed to send complete task! Assuming coordinator exited. Exiting worker.")
+		printf("[Worker] Failed to send complete task! Assuming coordinator exited. Exiting worker.")
 		o.done = true
 		return false
 	}

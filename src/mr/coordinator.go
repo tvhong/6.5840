@@ -135,7 +135,7 @@ func (c *Coordinator) Done() bool {
 		}
 		c.todoTasks = append(timedOutTasks, c.todoTasks...)
 
-		printf("[Coordinator] There are timed out tasks: %v", timedOutTasks)
+		printf("[Coordinator] There are timed out tasks: %v\n", timedOutTasks)
 	}
 
 	return c.state == STATE_DONE
