@@ -122,17 +122,21 @@ func (c *Coordinator) Done() bool {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	tasksToRemove := make([]Task, 0)
+	timedOutTasks := make([]Task, 0)
 	for _, task := range(c.inprogressTasks) {
 		if time.Now().Sub(task.StartTime) >= 10 * time.Second {
-			tasksToRemove = append(tasksToRemove, task)
+			timedOutTasks = append(timedOutTasks, task)
 		}
 	}
 
-	for _, task := range(tasksToRemove) {
-		delete(c.inprogressTasks, task.TaskId)
+	if len(timedOutTasks) > 0 {
+		for _, task := range(timedOutTasks) {
+			delete(c.inprogressTasks, task.TaskId)
+		}
+		c.todoTasks = append(timedOutTasks, c.todoTasks...)
+
+		printf("[Coordinator] There are timed out tasks: %v", timedOutTasks)
 	}
-	c.todoTasks = append(tasksToRemove, c.todoTasks...)
 
 	return c.state == STATE_DONE
 }

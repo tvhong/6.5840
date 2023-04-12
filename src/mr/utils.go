@@ -21,5 +21,5 @@ func printf(s string, args ...interface{}) {
 }
 
 func isDebug() bool {
-	return false
+	return true
 }
