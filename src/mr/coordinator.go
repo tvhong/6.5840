@@ -1,6 +1,7 @@
 package mr
 
 import "log"
+import "fmt"
 import "net"
 import "os"
 import "net/rpc"
@@ -110,21 +111,6 @@ func (c *Coordinator) Done() bool {
 	return c.state == STATE_DONE
 }
 
-//
-// create a Coordinator.
-// main/mrcoordinator.go calls this function.
-// nReduce is the number of reduce tasks to use.
-//
-func MakeCoordinator(files []string, nReduce int) *Coordinator {
-	c := Coordinator{}
-	c.initTodos(files, nReduce)
-	c.inprogressTasks = make(map[int]Task)
-	c.completedTasks = make([]Task, 0)
-	c.state = STATE_MAP
-	c.server()
-	return &c
-}
-
 func (c *Coordinator) initTodos(files []string, nReduce int) {
 	c.todoTasks = make([]Task, 0)
 
@@ -167,4 +153,29 @@ func (c *Coordinator) server() {
 		log.Fatal("listen error:", e)
 	}
 	go http.Serve(l, nil)
+}
+
+//
+// create a Coordinator.
+// main/mrcoordinator.go calls this function.
+// nReduce is the number of reduce tasks to use.
+//
+func MakeCoordinator(files []string, nReduce int) *Coordinator {
+	cleanFiles(nReduce)
+
+	c := Coordinator{}
+	c.initTodos(files, nReduce)
+	c.inprogressTasks = make(map[int]Task)
+	c.completedTasks = make([]Task, 0)
+	c.state = STATE_MAP
+	c.server()
+	return &c
+}
+
+func cleanFiles(nReduce int) {
+	os.Remove("mr-out-0")
+	for i := 0; i < nReduce; i++ {
+		filename := fmt.Sprintf("mr-inter-%d", i)
+		os.Remove(filename)
+	}
 }
