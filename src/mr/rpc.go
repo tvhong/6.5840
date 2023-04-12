@@ -9,6 +9,7 @@ package mr
 import "fmt"
 import "os"
 import "strconv"
+import "time"
 
 type TaskType string
 const (
@@ -28,6 +29,9 @@ type Task struct {
 
 	// Fields for ReduceTask
 	ReduceId int
+
+	// Fields for MapTask and ReduceTask
+	StartTime time.Time
 }
 
 func (t Task) String() string {

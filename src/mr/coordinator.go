@@ -5,6 +5,7 @@ import "fmt"
 import "net"
 import "os"
 import "sync"
+import "time"
 import "net/rpc"
 import "net/http"
 
@@ -20,12 +21,12 @@ type Coordinator struct {
 	inprogressTasks map[int]Task
 	completedTasks []Task
 	state State
-    mu sync.Mutex
+	mu sync.Mutex
 }
 
 func (c *Coordinator) GetTask(request *GetTaskRequest, reply *GetTaskReply) error {
-    c.mu.Lock()
-    defer c.mu.Unlock()
+	c.mu.Lock()
+	defer c.mu.Unlock()
 
 	var task Task
 
@@ -57,6 +58,8 @@ func (c *Coordinator) GetTask(request *GetTaskRequest, reply *GetTaskReply) erro
 	}
 
 	task = c.todoTasks[0]
+	task.StartTime = time.Now()
+
 	reply.Task = task
 	c.todoTasks = c.todoTasks[1:]
 	c.inprogressTasks[task.TaskId] = task
@@ -67,8 +70,8 @@ func (c *Coordinator) GetTask(request *GetTaskRequest, reply *GetTaskReply) erro
 }
 
 func (c *Coordinator) CompleteTask(request *CompleteTaskRequest, reply *CompleteTaskReply) error {
-    c.mu.Lock()
-    defer c.mu.Unlock()
+	c.mu.Lock()
+	defer c.mu.Unlock()
 
 	taskId := request.TaskId
 
@@ -116,6 +119,8 @@ func (c *Coordinator) hasInProgressOfType(taskType TaskType) bool {
 // if the entire job has finished.
 //
 func (c *Coordinator) Done() bool {
+	// TODO: check if inprogressTasks has been going on for too long
+	// If so, move it from inProgress to todoTasks
 	return c.state == STATE_DONE
 }
 
