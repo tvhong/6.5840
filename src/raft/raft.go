@@ -65,6 +65,7 @@ type Raft struct {
 	me          int                 // this peer's index into peers[]
 	dead        int32               // set by Kill()
 	currentTerm int                 // The latest term the server has seen
+	votedFor    int                 // The peer that this node voted for, -1 means not voted for any node
 	role        Role                // The role of this node
 
 	// Your data here (2A, 2B, 2C).
@@ -248,6 +249,7 @@ func Make(peers []*labrpc.ClientEnd, me int,
 	// Your initialization code here (2A, 2B, 2C).
 	// TODO (2C): read from persisted states
 	rf.currentTerm = 0
+	rf.votedFor = -1
 
 	// initialize from state persisted before a crash
 	rf.readPersist(persister.ReadRaftState())
