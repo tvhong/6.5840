@@ -36,6 +36,8 @@ const (
 	Leader    Role = "leader"
 )
 
+// Tester limits 10 heartbeat per second, and expects new leader to be elected
+// within 5s of failure
 const (
 	electionTimeoutMinMs = 1300
 	electionTimeoutMaxMs = 1700
@@ -237,18 +239,18 @@ func (rf *Raft) ticker() {
 		// RPC from current leader or granting vote to candidate:
 		// convert to candidate
 
-		// If leader, send an AppendEntry message
-
-		// Else, check if electionTimeout has reached, if yes, initiate an election
-		if time.Now().After(rf.nextElectionTimeout) {
-			Debug(rf.me, dLeader, "Election timeout! Initiating election")
+		if rf.role == Leader {
+			Debug(rf.me, dTimer, "Leader sending out heartbeat")
+			// TODO: send an AppendEntry message
+		} else {
+			if time.Now().After(rf.nextElectionTimeout) {
+				Debug(rf.me, dLeader, "Election timeout! Initiating election")
+				// TODO: initiate election
+			}
 		}
-
-		// Check if a leader election should be started.
 
 		// pause for a random amount of time between 50 and 350
 		// milliseconds.
-		// TODO: change to 1-2s as heartbeat is once every 100ms and tester expects new leader within 5s of failure
 		ms := 50 + (rand.Int63() % 300)
 		time.Sleep(time.Duration(ms) * time.Millisecond)
 	}
