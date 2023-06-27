@@ -249,7 +249,6 @@ func Make(peers []*labrpc.ClientEnd,
 	persister *Persister,
 	applyCh chan ApplyMsg) *Raft {
 
-	Debug(me, dClient, "Hello World!")
 	rf := &Raft{}
 	rf.peers = peers
 	rf.persister = persister
@@ -260,9 +259,15 @@ func Make(peers []*labrpc.ClientEnd,
 	rf.currentTerm = 0
 	rf.votedFor = -1
 
+	//TODO: shouldn't hardcode leader
+	if me == 0 {
+		rf.role = Leader
+	}
+
 	// initialize from state persisted before a crash
 	rf.readPersist(persister.ReadRaftState())
 
+	Debug(me, dLog, "Hello World!")
 	// start ticker goroutine to start elections
 	go rf.ticker()
 
