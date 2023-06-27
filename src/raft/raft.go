@@ -226,6 +226,8 @@ func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply
 // that the caller passes the address of the reply struct with &, not
 // the struct itself.
 func (rf *Raft) sendRequestVote(server int, args *RequestVoteArgs, reply *RequestVoteReply) bool {
+	// TODO: deadlock, S0 waits for S2 to complete, S0 cannot send message to S1
+	// S0 waits for S1 to respond, S1 waits for S0 to respond
 	rf.mu.Lock()
 	defer rf.mu.Unlock()
 
