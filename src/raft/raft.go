@@ -166,7 +166,13 @@ func (rf *Raft) RequestVote(args *RequestVoteArgs, reply *RequestVoteReply) {
 // example RequestVote RPC handler.
 func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply) {
 	Debug(rf.me, dInfo, "Handling AppendEntries %v", args)
-	// TODO: update reply object
+	if args.Term < rf.currentTerm {
+		reply.Success = false
+	} else {
+		reply.Success = true
+	}
+
+	reply.Term = rf.currentTerm
 	// TODO: update timeout
 }
 
