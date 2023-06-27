@@ -172,6 +172,8 @@ func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply
 		reply.Success = true
 	}
 
+	//TODO: if RPC request or response contains term T > currentTerm
+	// Set currentTerm = T, convert to Follower
 	reply.Term = rf.currentTerm
 
 	rf.refreshElectionTimeout()
