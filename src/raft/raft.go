@@ -159,6 +159,9 @@ type AppendEntriesReply struct {
 	Success bool
 }
 
+/************************************************************************
+ * RPC handlers
+ ***********************************************************************/
 func (rf *Raft) RequestVote(args *RequestVoteArgs, reply *RequestVoteReply) {
 	// Your code here (2A, 2B).
 }
@@ -183,6 +186,9 @@ func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply
 	rf.mu.Unlock()
 }
 
+/************************************************************************
+ * RPC senders
+ ***********************************************************************/
 // example code to send a RequestVote RPC to a server.
 // server is the index of the target server in rf.peers[].
 // expects RPC arguments in args.
@@ -311,6 +317,9 @@ func (rf *Raft) ticker() {
 	}
 }
 
+/************************************************************************
+ * Helper methods
+ ***********************************************************************/
 func (rf *Raft) refreshElectionTimeout() {
 	rf.nextElectionTimeout = time.Now().
 		Add(time.Duration(Random(electionTimeoutMinMs, electionTimeoutMaxMs) * int(time.Millisecond)))
