@@ -164,22 +164,22 @@ func (rf *Raft) RequestVote(args *RequestVoteArgs, reply *RequestVoteReply) {
 
 func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply) {
 	Debug(rf.me, dInfo, "Handling AppendEntries %v", args)
+	rf.mu.Lock()
 	if args.Term < rf.currentTerm {
 		reply.Success = false
 	} else {
 		reply.Success = true
 	}
 
-	rf.mu.Lock()
 	if args.Term > rf.currentTerm {
 		rf.currentTerm = args.Term
 		rf.role = Follower
 	}
-	rf.mu.Unlock()
 
 	reply.Term = rf.currentTerm
 
 	rf.refreshElectionTimeout()
+	rf.mu.Unlock()
 }
 
 // example code to send a RequestVote RPC to a server.
