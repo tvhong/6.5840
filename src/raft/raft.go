@@ -172,6 +172,7 @@ func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply
 		reply.Success = true
 	}
 
+	// TODO: manage locks
 	//TODO: if RPC request or response contains term T > currentTerm
 	// Set currentTerm = T, convert to Follower
 	reply.Term = rf.currentTerm
@@ -214,6 +215,7 @@ func (rf *Raft) sendRequestVote(server int, args *RequestVoteArgs, reply *Reques
 func (rf *Raft) sendAppendEntries(server int, args *AppendEntriesArgs, reply *AppendEntriesReply) bool {
 	Debug(rf.me, dInfo, "Sending appendEntries to server %v", server)
 	ok := rf.peers[server].Call("Raft.AppendEntries", args, reply)
+	Debug(rf.me, dInfo, "Finished appendEntries to server %v", server)
 	return ok
 }
 
@@ -281,7 +283,7 @@ func (rf *Raft) ticker() {
 
 				args := AppendEntriesArgs{Term: rf.currentTerm, LeaderId: rf.me}
 				reply := AppendEntriesReply{}
-				rf.sendAppendEntries(peer, &args, &reply)
+				go rf.sendAppendEntries(peer, &args, &reply)
 			}
 		} else {
 			if time.Now().After(rf.nextElectionTimeout) {
@@ -298,8 +300,11 @@ func (rf *Raft) ticker() {
 }
 
 func (rf *Raft) refreshElectionTimeout() {
+	rf.mu.Lock()
+	defer rf.mu.Unlock()
+
 	rf.nextElectionTimeout = time.Now().
-		Add(time.Duration(Random(electionTimeoutMinMs, electionTimeoutMaxMs)))
+		Add(time.Duration(Random(electionTimeoutMinMs, electionTimeoutMaxMs) * int(time.Millisecond)))
 }
 
 // the service or tester wants to create a Raft server. the ports
