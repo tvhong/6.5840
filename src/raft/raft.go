@@ -69,7 +69,7 @@ type Raft struct {
 	// persistent
 	me          int                 // this peer's index into peers[]
 	peers       []*labrpc.ClientEnd // RPC end points of all peers
-	currentTerm int                // The latest term the server has seen
+	currentTerm int                 // The latest term the server has seen
 	votedFor    int                 // The peer that this node voted for, -1 means not voted for any node
 
 	// volatile
@@ -149,11 +149,13 @@ type RequestVoteReply struct {
 }
 
 type AppendEntriesArgs struct {
-	Term int
+	Term     int
+	LeaderId int
 }
 
 type AppendEntriesReply struct {
-	// Your data here (2A).
+	Term    int
+	Success bool
 }
 
 // example RequestVote RPC handler.
