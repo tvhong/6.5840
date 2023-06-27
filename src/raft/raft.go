@@ -222,7 +222,7 @@ func (rf *Raft) sendRequestVote(server int, args *RequestVoteArgs, reply *Reques
 
 	ok := rf.peers[server].Call("Raft.RequestVote", args, reply)
 
-	rf.handleReplyTerm(reply.Term)
+	rf.updateTermIfNeeded(reply.Term)
 
 	return ok
 }
@@ -234,17 +234,9 @@ func (rf *Raft) sendAppendEntries(server int, args *AppendEntriesArgs, reply *Ap
 	Debug(rf.me, dInfo, "Sending appendEntries to server %v", server)
 	ok := rf.peers[server].Call("Raft.AppendEntries", args, reply)
 
-	rf.handleReplyTerm(reply.Term)
+	rf.updateTermIfNeeded(reply.Term)
 
 	return ok
-}
-
-func (rf *Raft) handleReplyTerm(term int) {
-	if term > rf.currentTerm {
-		Debug(rf.me, dState, "Received newer term from reply: %v, currentTerm: %v. Converting to Follower.", term, rf.currentTerm)
-		rf.currentTerm = term
-		rf.role = Follower
-	}
 }
 
 // the service using Raft (e.g. a k/v server) wants to start
@@ -326,6 +318,14 @@ func (rf *Raft) sendHeartbeats() {
 		args := AppendEntriesArgs{Term: rf.currentTerm, LeaderId: rf.me}
 		reply := AppendEntriesReply{}
 		go rf.sendAppendEntries(peer, &args, &reply)
+	}
+}
+
+func (rf *Raft) updateTermIfNeeded(term int) {
+	if term > rf.currentTerm {
+		Debug(rf.me, dState, "Received newer term [%v] than currentTerm [%v]. Converting to Follower.", term, rf.currentTerm)
+		rf.currentTerm = term
+		rf.role = Follower
 	}
 }
 
