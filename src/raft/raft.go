@@ -43,6 +43,8 @@ const (
 	electionTimeoutMaxMs = 1700
 )
 
+type tTerm int
+
 // as each Raft peer becomes aware that successive log entries are
 // committed, the peer should send an ApplyMsg to the service (or
 // tester) on the same server, via the applyCh passed to Make(). set
@@ -69,7 +71,7 @@ type Raft struct {
 	// persistent
 	me          int                 // this peer's index into peers[]
 	peers       []*labrpc.ClientEnd // RPC end points of all peers
-	currentTerm int                 // The latest term the server has seen
+	currentTerm tTerm               // The latest term the server has seen
 	votedFor    int                 // The peer that this node voted for, -1 means not voted for any node
 
 	// volatile
@@ -145,6 +147,14 @@ type RequestVoteArgs struct {
 // example RequestVote RPC reply structure.
 // field names must start with capital letters!
 type RequestVoteReply struct {
+	// Your data here (2A).
+}
+
+type AppendEntriesArgs struct {
+	Term tTerm
+}
+
+type AppendEntriesReply struct {
 	// Your data here (2A).
 }
 
