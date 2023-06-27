@@ -278,7 +278,11 @@ func (rf *Raft) ticker() {
 				reply := AppendEntriesReply{}
 				go rf.sendAppendEntries(peer, &args, &reply)
 
-				// TODO: if reply.Term is larger, update term and convert to Follower
+				// TODO: move this inside sendAppendEntries?
+				if reply.Term > rf.currentTerm {
+					rf.currentTerm = reply.Term
+					rf.role = Follower
+				}
 			}
 		} else {
 			if time.Now().After(rf.nextElectionTimeout) {
