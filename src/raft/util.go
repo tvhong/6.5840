@@ -12,22 +12,15 @@ import (
 type logTopic string
 
 const (
-	dClient  logTopic = "CLNT"
-	dCommit  logTopic = "CMIT"
-	dDrop    logTopic = "DROP"
-	dError   logTopic = "ERRO"
-	dInfo    logTopic = "INFO"
-	dLeader  logTopic = "LEAD"
-	dLog     logTopic = "LOG1"
-	dLog2    logTopic = "LOG2"
-	dPersist logTopic = "PERS"
-	dSnap    logTopic = "SNAP"
-	dTerm    logTopic = "TERM"
-	dTest    logTopic = "TEST"
-	dTimer   logTopic = "TIMR"
-	dTrace   logTopic = "TRCE"
-	dVote    logTopic = "VOTE"
-	dWarn    logTopic = "WARN"
+	dInfo  logTopic = "INFO"
+	dWarn  logTopic = "WARN"
+	dError logTopic = "ERRO"
+
+	dLog  logTopic = "LOG1"
+	dLog2 logTopic = "LOG2"
+
+	dTimer logTopic = "TIMR"
+	dVote  logTopic = "VOTE"
 )
 
 var debugStart time.Time
@@ -44,7 +37,7 @@ func Debug(serverId int, topic logTopic, format string, a ...interface{}) {
 }
 
 func Random(min int, max int) int {
-	if (max < min) {
+	if max < min {
 		min, max = max, min
 	}
 

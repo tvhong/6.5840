@@ -165,7 +165,9 @@ func (rf *Raft) RequestVote(args *RequestVoteArgs, reply *RequestVoteReply) {
 
 // example RequestVote RPC handler.
 func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply) {
-	// Your code here (2A, 2B).
+	Debug(rf.me, dInfo, "Handling AppendEntries %v", args)
+	// TODO: update reply object
+	// TODO: update timeout
 }
 
 // example code to send a RequestVote RPC to a server.
@@ -201,6 +203,7 @@ func (rf *Raft) sendRequestVote(server int, args *RequestVoteArgs, reply *Reques
 }
 
 func (rf *Raft) sendAppendEntries(server int, args *AppendEntriesArgs, reply *AppendEntriesReply) bool {
+	Debug(rf.me, dInfo, "Sending appendEntries to server %v", server)
 	ok := rf.peers[server].Call("Raft.AppendEntries", args, reply)
 	return ok
 }
@@ -260,11 +263,21 @@ func (rf *Raft) ticker() {
 		// convert to candidate
 
 		if rf.role == Leader {
-			Debug(rf.me, dTimer, "Leader sending out heartbeat")
-			// TODO: send an AppendEntry message
+			Debug(rf.me, dTimer, "Leader, Sending out heartbeat")
+			// TODO: send an AppendEntries message
+			for peer := 0; peer < len(rf.peers); peer++ {
+				if peer == rf.me {
+					continue
+				}
+
+				args := AppendEntriesArgs{Term: rf.currentTerm, LeaderId: rf.me}
+				reply := AppendEntriesReply{}
+				rf.sendAppendEntries(peer, &args, &reply)
+			}
+
 		} else {
 			if time.Now().After(rf.nextElectionTimeout) {
-				Debug(rf.me, dLeader, "Election timeout! Initiating election")
+				Debug(rf.me, dVote, "Election timeout! Initiating election.")
 				// TODO: initiate election
 			}
 		}
