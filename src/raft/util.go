@@ -3,6 +3,7 @@ package raft
 import (
 	"fmt"
 	"log"
+	"math/rand"
 	"os"
 	"strconv"
 	"time"
@@ -42,11 +43,21 @@ func Debug(serverId int, topic logTopic, format string, a ...interface{}) {
 	}
 }
 
+func Random(min int, max int) int {
+	if (max < min) {
+		min, max = max, min
+	}
+
+	return rand.Intn(max-min+1) + min
+}
+
 func init() {
 	debugVerbosity = getVerbosity()
 	debugStart = time.Now()
 
 	log.SetFlags(log.Flags() &^ (log.Ldate | log.Ltime))
+
+	rand.Seed(time.Now().UnixNano())
 }
 
 func getVerbosity() int {
