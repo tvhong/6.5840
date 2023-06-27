@@ -173,7 +173,8 @@ func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply
 	}
 
 	reply.Term = rf.currentTerm
-	// TODO: update timeout
+
+	rf.refreshElectionTimeout()
 }
 
 // example code to send a RequestVote RPC to a server.
@@ -292,6 +293,11 @@ func (rf *Raft) ticker() {
 		ms := 50 + (rand.Int63() % 300)
 		time.Sleep(time.Duration(ms) * time.Millisecond)
 	}
+}
+
+func (rf *Raft) refreshElectionTimeout() {
+	rf.nextElectionTimeout = time.Now().
+		Add(time.Duration(Random(electionTimeoutMinMs, electionTimeoutMaxMs)))
 }
 
 // the service or tester wants to create a Raft server. the ports
