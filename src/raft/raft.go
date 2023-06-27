@@ -43,8 +43,6 @@ const (
 	electionTimeoutMaxMs = 1700
 )
 
-type tTerm int
-
 // as each Raft peer becomes aware that successive log entries are
 // committed, the peer should send an ApplyMsg to the service (or
 // tester) on the same server, via the applyCh passed to Make(). set
@@ -71,7 +69,7 @@ type Raft struct {
 	// persistent
 	me          int                 // this peer's index into peers[]
 	peers       []*labrpc.ClientEnd // RPC end points of all peers
-	currentTerm tTerm               // The latest term the server has seen
+	currentTerm int                // The latest term the server has seen
 	votedFor    int                 // The peer that this node voted for, -1 means not voted for any node
 
 	// volatile
@@ -151,7 +149,7 @@ type RequestVoteReply struct {
 }
 
 type AppendEntriesArgs struct {
-	Term tTerm
+	Term int
 }
 
 type AppendEntriesReply struct {
