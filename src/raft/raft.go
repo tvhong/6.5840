@@ -36,6 +36,11 @@ const (
 	Leader    Role = "leader"
 )
 
+const (
+	electionTimeoutMinMs = 1300
+	electionTimeoutMaxMs = 1700
+)
+
 // as each Raft peer becomes aware that successive log entries are
 // committed, the peer should send an ApplyMsg to the service (or
 // tester) on the same server, via the applyCh passed to Make(). set
@@ -59,19 +64,18 @@ type ApplyMsg struct {
 
 // A Go object implementing a single Raft peer.
 type Raft struct {
-	mu          sync.Mutex          // Lock to protect shared access to this peer's state
-	peers       []*labrpc.ClientEnd // RPC end points of all peers
-	persister   *Persister          // Object to hold this peer's persisted state
+	// persistent
 	me          int                 // this peer's index into peers[]
-	dead        int32               // set by Kill()
+	peers       []*labrpc.ClientEnd // RPC end points of all peers
 	currentTerm int                 // The latest term the server has seen
 	votedFor    int                 // The peer that this node voted for, -1 means not voted for any node
-	role        Role                // The role of this node
 
-	// Your data here (2A, 2B, 2C).
-	// Look at the paper's Figure 2 for a description of what
-	// state a Raft server must maintain.
-
+	// volatile
+	mu                  sync.Mutex // Lock to protect shared access to this peer's state
+	persister           *Persister // Object to hold this peer's persisted state
+	dead                int32      // set by Kill()
+	role                Role       // The role of this node
+	nextElectionTimeout time.Time
 }
 
 // return currentTerm and whether this server
@@ -221,12 +225,24 @@ func (rf *Raft) killed() bool {
 
 func (rf *Raft) ticker() {
 	for !rf.killed() {
+		rf.mu.Lock()
+		defer rf.mu.Unlock()
+
 		// There are 2 different timeouts:
 		// 1. Election timeout
 		// 2. Heartbeat timeout (for leader only)
+		// ElectionTimeoutDeadline
+		// hearbeat, just send the heartbeat
 		// If election timeout elapses without receiving AppendEntries
 		// RPC from current leader or granting vote to candidate:
 		// convert to candidate
+
+		// If leader, send an AppendEntry message
+
+		// Else, check if electionTimeout has reached, if yes, initiate an election
+		if time.Now().After(rf.nextElectionTimeout) {
+			Debug(rf.me, dLeader, "Election timeout! Initiating election")
+		}
 
 		// Check if a leader election should be started.
 
@@ -266,6 +282,9 @@ func Make(peers []*labrpc.ClientEnd,
 	if me == 0 {
 		rf.role = Leader
 	}
+
+	rf.nextElectionTimeout = time.Now().Add(
+		time.Duration(Random(electionTimeoutMinMs, electionTimeoutMaxMs)))
 
 	// initialize from state persisted before a crash
 	rf.readPersist(persister.ReadRaftState())
