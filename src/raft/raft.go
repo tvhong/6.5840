@@ -158,12 +158,10 @@ type AppendEntriesReply struct {
 	Success bool
 }
 
-// example RequestVote RPC handler.
 func (rf *Raft) RequestVote(args *RequestVoteArgs, reply *RequestVoteReply) {
 	// Your code here (2A, 2B).
 }
 
-// example RequestVote RPC handler.
 func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply) {
 	Debug(rf.me, dInfo, "Handling AppendEntries %v", args)
 	if args.Term < rf.currentTerm {
@@ -172,9 +170,13 @@ func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply
 		reply.Success = true
 	}
 
-	// TODO: manage locks
-	//TODO: if RPC request or response contains term T > currentTerm
-	// Set currentTerm = T, convert to Follower
+	rf.mu.Lock()
+	if args.Term > rf.currentTerm {
+		rf.currentTerm = args.Term
+		rf.role = Follower
+	}
+	rf.mu.Unlock()
+
 	reply.Term = rf.currentTerm
 
 	rf.refreshElectionTimeout()
@@ -263,14 +265,6 @@ func (rf *Raft) ticker() {
 	for !rf.killed() {
 		rf.mu.Lock()
 
-		// There are 2 different timeouts:
-		// 1. Election timeout
-		// 2. Heartbeat timeout (for leader only)
-		// ElectionTimeoutDeadline
-		// hearbeat, just send the heartbeat
-		// If election timeout elapses without receiving AppendEntries
-		// RPC from current leader or granting vote to candidate:
-		// convert to candidate
 		Debug(rf.me, dTimer, "Tick")
 
 		if rf.role == Leader {
@@ -283,6 +277,8 @@ func (rf *Raft) ticker() {
 				args := AppendEntriesArgs{Term: rf.currentTerm, LeaderId: rf.me}
 				reply := AppendEntriesReply{}
 				go rf.sendAppendEntries(peer, &args, &reply)
+
+				// TODO: if reply.Term is larger, update term and convert to Follower
 			}
 		} else {
 			if time.Now().After(rf.nextElectionTimeout) {
@@ -290,13 +286,10 @@ func (rf *Raft) ticker() {
 				// TODO: initiate election
 			}
 		}
+		rf.mu.Unlock()
 
-		// pause for a random amount of time between 50 and 350
-		// milliseconds.
 		ms := 50 + (rand.Int63() % 300)
 		time.Sleep(time.Duration(ms) * time.Millisecond)
-
-		rf.mu.Unlock()
 	}
 }
 
