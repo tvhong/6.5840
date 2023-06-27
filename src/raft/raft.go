@@ -167,23 +167,21 @@ func (rf *Raft) RequestVote(args *RequestVoteArgs, reply *RequestVoteReply) {
 }
 
 func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply) {
-	Debug(rf.me, dInfo, "Handling AppendEntries %v", args)
 	rf.mu.Lock()
+	defer rf.mu.Unlock()
+
+	Debug(rf.me, dInfo, "Handling AppendEntries %v", args)
+
 	if args.Term < rf.currentTerm {
 		reply.Success = false
 	} else {
 		reply.Success = true
 	}
 
-	if args.Term > rf.currentTerm {
-		rf.currentTerm = args.Term
-		rf.role = Follower
-	}
-
 	reply.Term = rf.currentTerm
 
+	rf.updateTermIfNeeded(args.Term)
 	rf.refreshElectionTimeout()
-	rf.mu.Unlock()
 }
 
 /************************************************************************
