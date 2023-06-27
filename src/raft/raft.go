@@ -307,6 +307,10 @@ func (rf *Raft) ticker() {
 				rf.votedFor = rf.me
 				rf.refreshElectionTimeout()
 				for peer := 0; peer < len(rf.peers); peer++ {
+					if peer == rf.me {
+						continue
+					}
+
 					args := RequestVoteArgs{Term: rf.currentTerm, CandidateId: rf.me}
 					reply := RequestVoteReply{}
 					go rf.sendRequestVote(peer, &args, &reply)
