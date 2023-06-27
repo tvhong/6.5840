@@ -300,9 +300,6 @@ func (rf *Raft) ticker() {
 }
 
 func (rf *Raft) refreshElectionTimeout() {
-	rf.mu.Lock()
-	defer rf.mu.Unlock()
-
 	rf.nextElectionTimeout = time.Now().
 		Add(time.Duration(Random(electionTimeoutMinMs, electionTimeoutMaxMs) * int(time.Millisecond)))
 }
@@ -332,7 +329,7 @@ func Make(peers []*labrpc.ClientEnd,
 	rf.votedFor = -1
 
 	//TODO: shouldn't hardcode leader
-	if me == 0 {
+	if me == 2 {
 		rf.role = Leader
 	}
 
