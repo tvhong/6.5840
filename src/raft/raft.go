@@ -218,13 +218,18 @@ func (rf *Raft) killed() bool {
 
 func (rf *Raft) ticker() {
 	for !rf.killed() {
+		// There are 2 different timeouts:
+		// 1. Election timeout
+		// 2. Heartbeat timeout (for leader only)
+		// If election timeout elapses without receiving AppendEntries
+		// RPC from current leader or granting vote to candidate:
+		// convert to candidate
 
-		// Your code here (2A)
 		// Check if a leader election should be started.
 
 		// pause for a random amount of time between 50 and 350
 		// milliseconds.
-		// TODO: change from 1-2s as heartbeat is once every 100ms and tester expects new leader within 5s of failure
+		// TODO: change to 1-2s as heartbeat is once every 100ms and tester expects new leader within 5s of failure
 		ms := 50 + (rand.Int63() % 300)
 		time.Sleep(time.Duration(ms) * time.Millisecond)
 	}
@@ -244,6 +249,7 @@ func Make(peers []*labrpc.ClientEnd,
 	persister *Persister,
 	applyCh chan ApplyMsg) *Raft {
 
+	Debug(me, dClient, "Hello World!")
 	rf := &Raft{}
 	rf.peers = peers
 	rf.persister = persister
