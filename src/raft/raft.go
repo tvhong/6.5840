@@ -39,8 +39,8 @@ const (
 // Tester limits 10 heartbeat per second, and expects new leader to be elected
 // within 5s of failure
 const (
-	electionTimeoutMinMs = 500
-	electionTimeoutMaxMs = 800
+	electionTimeoutMinMs = 1300
+	electionTimeoutMaxMs = 1700
 )
 
 // as each Raft peer becomes aware that successive log entries are
