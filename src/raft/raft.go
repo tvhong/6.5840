@@ -294,16 +294,7 @@ func (rf *Raft) ticker() {
 		Debug(rf.me, dTimer, "Tick")
 
 		if rf.role == Leader {
-			Debug(rf.me, dTimer, "Leader: Sending heartbeats")
-			for peer := 0; peer < len(rf.peers); peer++ {
-				if peer == rf.me {
-					continue
-				}
-
-				args := AppendEntriesArgs{Term: rf.currentTerm, LeaderId: rf.me}
-				reply := AppendEntriesReply{}
-				go rf.sendAppendEntries(peer, &args, &reply)
-			}
+			rf.sendHeartbeats()
 		} else {
 			if time.Now().After(rf.nextElectionTimeout) {
 				Debug(rf.me, dVote, "Election timeout! Initiating election.")
@@ -323,6 +314,19 @@ func (rf *Raft) ticker() {
 func (rf *Raft) refreshElectionTimeout() {
 	rf.nextElectionTimeout = time.Now().
 		Add(time.Duration(Random(electionTimeoutMinMs, electionTimeoutMaxMs) * int(time.Millisecond)))
+}
+
+func (rf *Raft) sendHeartbeats() {
+	Debug(rf.me, dTimer, "Leader, sending heartbeats")
+	for peer := 0; peer < len(rf.peers); peer++ {
+		if peer == rf.me {
+			continue
+		}
+
+		args := AppendEntriesArgs{Term: rf.currentTerm, LeaderId: rf.me}
+		reply := AppendEntriesReply{}
+		go rf.sendAppendEntries(peer, &args, &reply)
+	}
 }
 
 // the service or tester wants to create a Raft server. the ports
