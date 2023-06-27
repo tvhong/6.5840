@@ -145,6 +145,7 @@ type RequestVoteArgs struct {
 // example RequestVote RPC reply structure.
 // field names must start with capital letters!
 type RequestVoteReply struct {
+	Term int
 	// Your data here (2A).
 }
 
@@ -210,15 +211,34 @@ func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply
 // that the caller passes the address of the reply struct with &, not
 // the struct itself.
 func (rf *Raft) sendRequestVote(server int, args *RequestVoteArgs, reply *RequestVoteReply) bool {
+	rf.mu.Lock()
+	defer rf.mu.Unlock()
+
 	ok := rf.peers[server].Call("Raft.RequestVote", args, reply)
+
+	rf.handleReplyTerm(reply.Term)
+
 	return ok
 }
 
 func (rf *Raft) sendAppendEntries(server int, args *AppendEntriesArgs, reply *AppendEntriesReply) bool {
+	rf.mu.Lock()
+	defer rf.mu.Unlock()
+
 	Debug(rf.me, dInfo, "Sending appendEntries to server %v", server)
 	ok := rf.peers[server].Call("Raft.AppendEntries", args, reply)
-	Debug(rf.me, dInfo, "Finished appendEntries to server %v", server)
+
+	rf.handleReplyTerm(reply.Term)
+
 	return ok
+}
+
+func (rf *Raft) handleReplyTerm(term int) {
+	if term > rf.currentTerm {
+		Debug(rf.me, dState, "Received newer term from reply: %v, currentTerm: %v. Converting to Follower.", term, rf.currentTerm)
+		rf.currentTerm = term
+		rf.role = Follower
+	}
 }
 
 // the service using Raft (e.g. a k/v server) wants to start
@@ -277,12 +297,6 @@ func (rf *Raft) ticker() {
 				args := AppendEntriesArgs{Term: rf.currentTerm, LeaderId: rf.me}
 				reply := AppendEntriesReply{}
 				go rf.sendAppendEntries(peer, &args, &reply)
-
-				// TODO: move this inside sendAppendEntries?
-				if reply.Term > rf.currentTerm {
-					rf.currentTerm = reply.Term
-					rf.role = Follower
-				}
 			}
 		} else {
 			if time.Now().After(rf.nextElectionTimeout) {

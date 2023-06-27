@@ -21,6 +21,7 @@ const (
 
 	dTimer logTopic = "TIMR"
 	dVote  logTopic = "VOTE"
+	dState logTopic = "STAT"
 )
 
 var debugStart time.Time
