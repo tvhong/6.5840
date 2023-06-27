@@ -331,8 +331,7 @@ func Make(peers []*labrpc.ClientEnd,
 		rf.role = Leader
 	}
 
-	rf.nextElectionTimeout = time.Now().Add(
-		time.Duration(Random(electionTimeoutMinMs, electionTimeoutMaxMs)))
+	rf.refreshElectionTimeout()
 
 	// initialize from state persisted before a crash
 	rf.readPersist(persister.ReadRaftState())
