@@ -163,7 +163,7 @@ func (rf *Raft) RequestVote(args *RequestVoteArgs, reply *RequestVoteReply) {
 	rf.mu.Lock()
 	defer rf.mu.Unlock()
 
-	Debug(rf.me, dInfo, "Handle RequestVote from [S%v], args: [%v]", args.CandidateId, args)
+	Debug(rf.me, dInfo, "Handle RequestVote from S%v, args: %v", args.CandidateId, args)
 
 	reply.VoteGranted = args.Term >= rf.currentTerm &&
 		(rf.votedFor == -1 || rf.votedFor == args.CandidateId)
@@ -181,7 +181,7 @@ func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply
 	rf.mu.Lock()
 	defer rf.mu.Unlock()
 
-	Debug(rf.me, dInfo, "Handle AppendEntries from leader [S%v], args: [%v]", args.LeaderId, args)
+	Debug(rf.me, dInfo, "Handle AppendEntries from leader S%v, args: %v", args.LeaderId, args)
 
 	if args.Term < rf.currentTerm {
 		reply.Success = false
@@ -229,7 +229,7 @@ func (rf *Raft) sendRequestVote(server int, args *RequestVoteArgs, reply *Reques
 	rf.mu.Lock()
 	defer rf.mu.Unlock()
 
-	Debug(rf.me, dVote, "Request vote from server [S%v]", server)
+	Debug(rf.me, dVote, "Request vote from server S%v", server)
 
 	ok := rf.peers[server].Call("Raft.RequestVote", args, reply)
 
@@ -242,7 +242,7 @@ func (rf *Raft) sendAppendEntries(server int, args *AppendEntriesArgs, reply *Ap
 	rf.mu.Lock()
 	defer rf.mu.Unlock()
 
-	Debug(rf.me, dInfo, "Send appendEntries to server [S%v]", server)
+	Debug(rf.me, dInfo, "Send appendEntries to server S%v", server)
 
 	ok := rf.peers[server].Call("Raft.AppendEntries", args, reply)
 
@@ -301,11 +301,13 @@ func (rf *Raft) ticker() {
 			rf.sendHeartbeats()
 		} else {
 			if time.Now().After(rf.nextElectionTimeout) {
-				Debug(rf.me, dVote, "Election timeout! Initiating election.")
+				Debug(rf.me, dVote, "Election timeout!")
 				rf.role = Candidate
 				rf.currentTerm++
 				rf.votedFor = rf.me
 				rf.refreshElectionTimeout()
+				Debug(rf.me, dVote, "Convert to Candidate with term %v", rf.currentTerm)
+
 				for peer := 0; peer < len(rf.peers); peer++ {
 					if peer == rf.me {
 						continue
@@ -352,7 +354,7 @@ func (rf *Raft) sendHeartbeats() {
 
 func (rf *Raft) updateTermIfNeeded(term int) {
 	if term > rf.currentTerm {
-		Debug(rf.me, dState, "Received newer term [%v] than currentTerm [%v]. Converting to Follower.", term, rf.currentTerm)
+		Debug(rf.me, dState, "Received newer term %v > %v. Converting to Follower.", term, rf.currentTerm)
 		rf.currentTerm = term
 		rf.role = Follower
 	}
