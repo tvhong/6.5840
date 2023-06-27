@@ -136,17 +136,14 @@ func (rf *Raft) Snapshot(index int, snapshot []byte) {
 
 }
 
-// example RequestVote RPC arguments structure.
-// field names must start with capital letters!
 type RequestVoteArgs struct {
-	// Your data here (2A, 2B).
+	Term        int
+	CandidateId int
 }
 
-// example RequestVote RPC reply structure.
-// field names must start with capital letters!
 type RequestVoteReply struct {
-	Term int
-	// Your data here (2A).
+	Term        int
+	VoteGranted bool
 }
 
 type AppendEntriesArgs struct {
@@ -288,7 +285,20 @@ func (rf *Raft) ticker() {
 		} else {
 			if time.Now().After(rf.nextElectionTimeout) {
 				Debug(rf.me, dVote, "Election timeout! Initiating election.")
-				// TODO: initiate election
+				rf.role = Candidate
+				rf.currentTerm++
+				rf.votedFor = rf.me
+				rf.refreshElectionTimeout()
+				for peer := 0; peer < len(rf.peers); peer++ {
+					args := RequestVoteArgs{Term: rf.currentTerm, CandidateId: rf.me}
+					reply := RequestVoteReply{}
+					go rf.sendRequestVote(peer, &args, &reply)
+
+					// TODO: handle reply. Track if got majority votes
+					// Create voteReceived
+					// If timeout, clear the list that waits for reponse
+					// If convert to Follower, clear the list that waits for response
+				}
 			}
 		}
 		rf.mu.Unlock()
