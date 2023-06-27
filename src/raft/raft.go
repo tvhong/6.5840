@@ -215,6 +215,8 @@ func (rf *Raft) sendRequestVote(server int, args *RequestVoteArgs, reply *Reques
 	rf.mu.Lock()
 	defer rf.mu.Unlock()
 
+	Debug(rf.me, dVote, "Request vote from server [%v]", server)
+
 	ok := rf.peers[server].Call("Raft.RequestVote", args, reply)
 
 	rf.updateTermIfNeeded(reply.Term)
@@ -226,7 +228,7 @@ func (rf *Raft) sendAppendEntries(server int, args *AppendEntriesArgs, reply *Ap
 	rf.mu.Lock()
 	defer rf.mu.Unlock()
 
-	Debug(rf.me, dInfo, "Sending appendEntries to server %v", server)
+	Debug(rf.me, dInfo, "Send appendEntries to server [%v]", server)
 	ok := rf.peers[server].Call("Raft.AppendEntries", args, reply)
 
 	rf.updateTermIfNeeded(reply.Term)
