@@ -261,10 +261,10 @@ func (rf *Raft) ticker() {
 		// If election timeout elapses without receiving AppendEntries
 		// RPC from current leader or granting vote to candidate:
 		// convert to candidate
+		Debug(rf.me, dTimer, "Tick")
 
 		if rf.role == Leader {
-			Debug(rf.me, dTimer, "Leader, Sending out heartbeat")
-			// TODO: send an AppendEntries message
+			Debug(rf.me, dTimer, "Leader: Sending heartbeats")
 			for peer := 0; peer < len(rf.peers); peer++ {
 				if peer == rf.me {
 					continue
@@ -274,7 +274,6 @@ func (rf *Raft) ticker() {
 				reply := AppendEntriesReply{}
 				rf.sendAppendEntries(peer, &args, &reply)
 			}
-
 		} else {
 			if time.Now().After(rf.nextElectionTimeout) {
 				Debug(rf.me, dVote, "Election timeout! Initiating election.")
