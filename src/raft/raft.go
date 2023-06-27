@@ -160,14 +160,28 @@ type AppendEntriesReply struct {
  * RPC handlers
  ***********************************************************************/
 func (rf *Raft) RequestVote(args *RequestVoteArgs, reply *RequestVoteReply) {
-	// Your code here (2A, 2B).
+	rf.mu.Lock()
+	defer rf.mu.Unlock()
+
+	Debug(rf.me, dInfo, "Handle RequestVote from [%v], args: [%v]", args.CandidateId, args)
+
+	reply.VoteGranted = args.Term >= rf.currentTerm &&
+		(rf.votedFor == -1 || rf.votedFor == args.CandidateId)
+	if reply.VoteGranted {
+		rf.votedFor = args.CandidateId
+		rf.refreshElectionTimeout()
+	}
+
+	reply.Term = rf.currentTerm
+
+	rf.updateTermIfNeeded(args.Term)
 }
 
 func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply) {
 	rf.mu.Lock()
 	defer rf.mu.Unlock()
 
-	Debug(rf.me, dInfo, "Handling AppendEntries %v", args)
+	Debug(rf.me, dInfo, "Handle AppendEntries from leader [%v], args: [%v]", args.LeaderId, args)
 
 	if args.Term < rf.currentTerm {
 		reply.Success = false
