@@ -262,7 +262,6 @@ func (rf *Raft) killed() bool {
 func (rf *Raft) ticker() {
 	for !rf.killed() {
 		rf.mu.Lock()
-		defer rf.mu.Unlock()
 
 		// There are 2 different timeouts:
 		// 1. Election timeout
@@ -296,6 +295,8 @@ func (rf *Raft) ticker() {
 		// milliseconds.
 		ms := 50 + (rand.Int63() % 300)
 		time.Sleep(time.Duration(ms) * time.Millisecond)
+
+		rf.mu.Unlock()
 	}
 }
 
