@@ -169,7 +169,7 @@ func (rf *Raft) RequestVote(args *RequestVoteArgs, reply *RequestVoteReply) {
 	rf.mu.Lock()
 	defer rf.mu.Unlock()
 
-	Debug(rf.me, rf.currentTerm, dVote, "Received RequestVote from S%v, args: %v", args.CandidateId, args)
+	Debug(rf.me, rf.currentTerm, dVote, "Receive RequestVote from S%v, args: %v", args.CandidateId, args)
 
 	rf.maybeAdvanceTerm(args.Term)
 	reply.Term = rf.currentTerm
@@ -256,7 +256,7 @@ func (rf *Raft) sendRequestVote(server int, args *RequestVoteArgs, reply *Reques
 
 			// Received majority votes
 			if len(rf.votesReceived) >= len(rf.peers)/2+1 {
-				Debug(rf.me, rf.currentTerm, dVote, "Received majority votes, becoming leader. votesReceived: %v")
+				Debug(rf.me, rf.currentTerm, dVote, "Receive majority votes, becoming leader. votesReceived: %v", rf.votesReceived)
 				rf.role = Leader
 			}
 		}
@@ -391,7 +391,7 @@ func (rf *Raft) sendHeartbeats() {
 func (rf *Raft) maybeAdvanceTerm(term int) bool {
 	advance := term > rf.currentTerm
 	if advance {
-		Debug(rf.me, rf.currentTerm, dState, "Received newer term %v > %v. Converting to Follower.", term, rf.currentTerm)
+		Debug(rf.me, rf.currentTerm, dState, "Receive newer term %v > %v. Converting to Follower.", term, rf.currentTerm)
 		rf.advanceTerm(term)
 		rf.role = Follower
 	}

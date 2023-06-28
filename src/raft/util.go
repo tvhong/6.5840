@@ -32,7 +32,7 @@ func Debug(server int, currentTerm int, topic logTopic, format string, a ...inte
 	if debugVerbosity >= 1 {
 		time := time.Since(debugStart).Microseconds()
 		time /= 100
-		prefix := fmt.Sprintf("%06d %v S%v [t%v] ", time, string(topic), server, currentTerm)
+		prefix := fmt.Sprintf("%06d %v S%v t%v ", time, string(topic), server, currentTerm)
 		format = prefix + format
 		log.Printf(format, a...)
 	}
