@@ -169,7 +169,7 @@ func (rf *Raft) RequestVote(args *RequestVoteArgs, reply *RequestVoteReply) {
 	rf.mu.Lock()
 	defer rf.mu.Unlock()
 
-	Debug(rf.me, rf.currentTerm, dVote, "Handle RequestVote from S%v, args: %v", args.CandidateId, args)
+	Debug(rf.me, rf.currentTerm, dVote, "Received RequestVote from S%v, args: %v", args.CandidateId, args)
 
 	rf.maybeAdvanceTerm(args.Term)
 	reply.Term = rf.currentTerm
@@ -189,14 +189,16 @@ func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply
 	rf.mu.Lock()
 	defer rf.mu.Unlock()
 
-	Debug(rf.me, rf.currentTerm, dRpc, "Handle AppendEntries from leader S%v, args: %v", args.LeaderId, args)
+	Debug(rf.me, rf.currentTerm, dRpc, "Receive AppendEntries from S%v, args: %v", args.LeaderId, args)
 
 	rf.maybeAdvanceTerm(args.Term)
 	reply.Term = rf.currentTerm
 
 	if args.Term < rf.currentTerm {
+		Debug(rf.me, rf.currentTerm, dRpc, "Reject AppendEntries from S%v", args.LeaderId)
 		reply.Success = false
 	} else {
+		Debug(rf.me, rf.currentTerm, dRpc, "Accept AppendEntries from S%v", args.LeaderId)
 		reply.Success = true
 	}
 
