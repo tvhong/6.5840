@@ -243,10 +243,13 @@ func (rf *Raft) sendRequestVote(server int, args *RequestVoteArgs, reply *Reques
 	rf.mu.Lock()
 
 	if rf.currentTerm == currTerm {
-		rf.maybeAdvanceTerm(reply.Term)
+		advancedTerm := rf.maybeAdvanceTerm(reply.Term)
 
-		// TODO: change maybeAdvanceTerm to return ok status
-		if reply.Term <= rf.currentTerm && reply.VoteGranted {
+		if reply.VoteGranted {
+			if advancedTerm {
+				log.Fatalf("S%v shouldn't have voted for S%v if it has higher term, currentTerm: %v, reply: %v", server, rf.me, rf.currentTerm, reply)
+			}
+
 			rf.votesReceived[server] = member
 
 			// Received majority votes
