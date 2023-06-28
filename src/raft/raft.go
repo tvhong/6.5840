@@ -180,7 +180,7 @@ func (rf *Raft) RequestVote(args *RequestVoteArgs, reply *RequestVoteReply) {
 
 	reply.Term = rf.currentTerm
 
-	rf.updateTermIfNeeded(args.Term)
+	rf.maybeAdvanceTerm(args.Term)
 }
 
 func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply) {
@@ -197,7 +197,7 @@ func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply
 
 	reply.Term = rf.currentTerm
 
-	rf.updateTermIfNeeded(args.Term)
+	rf.maybeAdvanceTerm(args.Term)
 	rf.refreshElectionTimeout()
 }
 
@@ -241,15 +241,15 @@ func (rf *Raft) sendRequestVote(server int, args *RequestVoteArgs, reply *Reques
 	rf.mu.Lock()
 
 	if rf.currentTerm == currTerm {
-		rf.updateTermIfNeeded(reply.Term)
+		rf.maybeAdvanceTerm(reply.Term)
 
-		// TODO: change updateTermIfNeeded to return ok status
+		// TODO: change maybeAdvanceTerm to return ok status
 		if reply.Term <= rf.currentTerm && reply.VoteGranted {
 			rf.votesReceived[server] = member
 
 			// Received majority votes
 			if len(rf.votesReceived) >= len(rf.peers)/2+1 {
-				Debug(rf.me, dVote, "Received majority votes, becoming leader. votesReceived: %v", )
+				Debug(rf.me, dVote, "Received majority votes, becoming leader. votesReceived: %v")
 				rf.role = Leader
 			}
 		}
@@ -268,7 +268,7 @@ func (rf *Raft) sendAppendEntries(server int, args *AppendEntriesArgs, reply *Ap
 
 	rf.mu.Lock()
 
-	rf.updateTermIfNeeded(reply.Term)
+	rf.maybeAdvanceTerm(reply.Term)
 
 	rf.mu.Unlock()
 
@@ -381,8 +381,8 @@ func (rf *Raft) sendHeartbeats() {
 	}
 }
 
-func (rf *Raft) updateTermIfNeeded(term int) bool {
-	updated := term > rf.currentTerm 
+func (rf *Raft) maybeAdvanceTerm(term int) bool {
+	updated := term > rf.currentTerm
 	if updated {
 		Debug(rf.me, dState, "Received newer term %v > %v. Converting to Follower.", term, rf.currentTerm)
 		rf.advanceTerm(term)
