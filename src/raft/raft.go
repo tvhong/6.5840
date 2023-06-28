@@ -163,7 +163,7 @@ func (rf *Raft) RequestVote(args *RequestVoteArgs, reply *RequestVoteReply) {
 	rf.mu.Lock()
 	defer rf.mu.Unlock()
 
-	Debug(rf.me, dInfo, "Handle RequestVote from S%v, args: %v", args.CandidateId, args)
+	Debug(rf.me, dVote, "Handle RequestVote from S%v, args: %v", args.CandidateId, args)
 
 	reply.VoteGranted = args.Term >= rf.currentTerm &&
 		(rf.votedFor == -1 || rf.votedFor == args.CandidateId)
@@ -226,8 +226,6 @@ func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply
 // that the caller passes the address of the reply struct with &, not
 // the struct itself.
 func (rf *Raft) sendRequestVote(server int, args *RequestVoteArgs, reply *RequestVoteReply) bool {
-	// TODO: deadlock, S0 waits for S2 to complete, S0 cannot send message to S1
-	// S0 waits for S1 to respond, S1 waits for S0 to respond
 	Debug(rf.me, dVote, "Request vote from server S%v", server)
 
 	ok := rf.peers[server].Call("Raft.RequestVote", args, reply)
