@@ -228,27 +228,30 @@ func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply
 func (rf *Raft) sendRequestVote(server int, args *RequestVoteArgs, reply *RequestVoteReply) bool {
 	// TODO: deadlock, S0 waits for S2 to complete, S0 cannot send message to S1
 	// S0 waits for S1 to respond, S1 waits for S0 to respond
-	rf.mu.Lock()
-	defer rf.mu.Unlock()
-
 	Debug(rf.me, dVote, "Request vote from server S%v", server)
 
 	ok := rf.peers[server].Call("Raft.RequestVote", args, reply)
 
+	rf.mu.Lock()
+
 	rf.updateTermIfNeeded(reply.Term)
+
+	rf.mu.Unlock()
 
 	return ok
 }
 
 func (rf *Raft) sendAppendEntries(server int, args *AppendEntriesArgs, reply *AppendEntriesReply) bool {
-	rf.mu.Lock()
-	defer rf.mu.Unlock()
 
 	Debug(rf.me, dInfo, "Send appendEntries to server S%v", server)
 
 	ok := rf.peers[server].Call("Raft.AppendEntries", args, reply)
 
+	rf.mu.Lock()
+
 	rf.updateTermIfNeeded(reply.Term)
+
+	rf.mu.Unlock()
 
 	return ok
 }
