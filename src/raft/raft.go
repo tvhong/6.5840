@@ -249,7 +249,7 @@ func (rf *Raft) sendRequestVote(server int, args *RequestVoteArgs, reply *Reques
 
 			// Received majority votes
 			if len(rf.votesReceived) >= len(rf.peers)/2+1 {
-				Debug(rf.me, dVote, "Received majority votes, becoming leader. votesReceived: %v", rf.votesReceived)
+				Debug(rf.me, dVote, "Received majority votes, becoming leader. votesReceived: %v", )
 				rf.role = Leader
 			}
 		}
@@ -327,7 +327,7 @@ func (rf *Raft) ticker() {
 			if time.Now().After(rf.nextElectionTimeout) {
 				Debug(rf.me, dVote, "Election timeout!")
 				rf.role = Candidate
-				rf.updateTerm(rf.currentTerm + 1)
+				rf.advanceTerm(rf.currentTerm + 1)
 
 				rf.votedFor = rf.me
 				rf.votesReceived = make(map[int]void)
@@ -381,15 +381,18 @@ func (rf *Raft) sendHeartbeats() {
 	}
 }
 
-func (rf *Raft) updateTermIfNeeded(term int) {
-	if term > rf.currentTerm {
+func (rf *Raft) updateTermIfNeeded(term int) bool {
+	updated := term > rf.currentTerm 
+	if updated {
 		Debug(rf.me, dState, "Received newer term %v > %v. Converting to Follower.", term, rf.currentTerm)
-		rf.updateTerm(term)
+		rf.advanceTerm(term)
 		rf.role = Follower
 	}
+
+	return updated
 }
 
-func (rf *Raft) updateTerm(term int) {
+func (rf *Raft) advanceTerm(term int) {
 	if term <= rf.currentTerm {
 		log.Fatalf("Updating currentTerm %v with a smaller or equal value: %v", rf.currentTerm, term)
 	}
