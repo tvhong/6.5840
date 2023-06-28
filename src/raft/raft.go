@@ -19,6 +19,7 @@ package raft
 
 import (
 	//	"bytes"
+	"log"
 	"math/rand"
 	"sync"
 	"sync/atomic"
@@ -306,7 +307,7 @@ func (rf *Raft) ticker() {
 			if time.Now().After(rf.nextElectionTimeout) {
 				Debug(rf.me, dVote, "Election timeout!")
 				rf.role = Candidate
-				rf.currentTerm++
+				rf.updateTerm(rf.currentTerm + 1)
 				rf.votedFor = rf.me
 				rf.refreshElectionTimeout()
 				Debug(rf.me, dVote, "Convert to Candidate with term %v", rf.currentTerm)
@@ -321,9 +322,9 @@ func (rf *Raft) ticker() {
 					go rf.sendRequestVote(peer, &args, &reply)
 
 					// TODO: handle reply. Track if got majority votes
-					// Create voteReceived
-					// If timeout, clear the list that waits for reponse
-					// If convert to Follower, clear the list that waits for response
+					// Create votesReceived
+					// If timeout, clear votesReceived
+					// If convert to Follower, clear votesReceived
 				}
 			}
 		}
@@ -358,9 +359,18 @@ func (rf *Raft) sendHeartbeats() {
 func (rf *Raft) updateTermIfNeeded(term int) {
 	if term > rf.currentTerm {
 		Debug(rf.me, dState, "Received newer term %v > %v. Converting to Follower.", term, rf.currentTerm)
-		rf.currentTerm = term
+		rf.updateTerm(term)
 		rf.role = Follower
 	}
+}
+
+func (rf *Raft) updateTerm(term int) {
+	if term <= rf.currentTerm {
+		log.Fatalf("Updating currentTerm %v with a smaller or equal value: %v", rf.currentTerm, term)
+	}
+
+	rf.currentTerm = term
+	rf.votedFor = -1
 }
 
 // the service or tester wants to create a Raft server. the ports
