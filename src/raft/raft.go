@@ -169,16 +169,16 @@ func (rf *Raft) RequestVote(args *RequestVoteArgs, reply *RequestVoteReply) {
 	rf.mu.Lock()
 	defer rf.mu.Unlock()
 
-	Debug(rf.me, dVote, "Handle RequestVote from S%v, args: %v", args.CandidateId, args)
+	Debug(rf.me, rf.currentTerm, dVote, "Handle RequestVote from S%v, args: %v", args.CandidateId, args)
 
 	reply.VoteGranted = args.Term >= rf.currentTerm &&
 		(rf.votedFor == -1 || rf.votedFor == args.CandidateId)
 	if reply.VoteGranted {
-		Debug(rf.me, dVote, "Vote for server S%v", args.CandidateId)
+		Debug(rf.me, rf.currentTerm, dVote, "Vote for S%v", args.CandidateId)
 		rf.votedFor = args.CandidateId
 		rf.refreshElectionTimeout()
 	} else {
-		Debug(rf.me, dVote, "Do not vote for server S%v", args.CandidateId)
+		Debug(rf.me, rf.currentTerm, dVote, "Do not vote for server S%v", args.CandidateId)
 	}
 
 	rf.maybeAdvanceTerm(args.Term)
@@ -189,7 +189,7 @@ func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply
 	rf.mu.Lock()
 	defer rf.mu.Unlock()
 
-	Debug(rf.me, dRpc, "Handle AppendEntries from leader S%v, args: %v", args.LeaderId, args)
+	Debug(rf.me, rf.currentTerm, dRpc, "Handle AppendEntries from leader S%v, args: %v", args.LeaderId, args)
 
 	if args.Term < rf.currentTerm {
 		reply.Success = false
@@ -234,7 +234,7 @@ func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply
 // that the caller passes the address of the reply struct with &, not
 // the struct itself.
 func (rf *Raft) sendRequestVote(server int, args *RequestVoteArgs, reply *RequestVoteReply) bool {
-	Debug(rf.me, dVote, "Request vote from server S%v", server)
+	Debug(rf.me, rf.currentTerm, dVote, "Request vote from server S%v", server)
 
 	currTerm := rf.currentTerm
 
@@ -254,7 +254,7 @@ func (rf *Raft) sendRequestVote(server int, args *RequestVoteArgs, reply *Reques
 
 			// Received majority votes
 			if len(rf.votesReceived) >= len(rf.peers)/2+1 {
-				Debug(rf.me, dVote, "Received majority votes, becoming leader. votesReceived: %v")
+				Debug(rf.me, rf.currentTerm, dVote, "Received majority votes, becoming leader. votesReceived: %v")
 				rf.role = Leader
 			}
 		}
@@ -267,7 +267,7 @@ func (rf *Raft) sendRequestVote(server int, args *RequestVoteArgs, reply *Reques
 
 func (rf *Raft) sendAppendEntries(server int, args *AppendEntriesArgs, reply *AppendEntriesReply) bool {
 
-	Debug(rf.me, dRpc, "Send appendEntries to server S%v", server)
+	Debug(rf.me, rf.currentTerm, dRpc, "Send appendEntries to server S%v", server)
 
 	ok := rf.peers[server].Call("Raft.AppendEntries", args, reply)
 
@@ -324,13 +324,13 @@ func (rf *Raft) ticker() {
 	for !rf.killed() {
 		rf.mu.Lock()
 
-		Debug(rf.me, dTimer, "Tick")
+		Debug(rf.me, rf.currentTerm, dTimer, "Tick")
 
 		if rf.role == Leader {
 			rf.sendHeartbeats()
 		} else {
 			if time.Now().After(rf.nextElectionTimeout) {
-				Debug(rf.me, dVote, "Election timeout!")
+				Debug(rf.me, rf.currentTerm, dVote, "Election timeout!")
 				rf.role = Candidate
 				rf.advanceTerm(rf.currentTerm + 1)
 
@@ -340,7 +340,7 @@ func (rf *Raft) ticker() {
 
 				rf.refreshElectionTimeout()
 
-				Debug(rf.me, dVote, "Convert to Candidate with term %v", rf.currentTerm)
+				Debug(rf.me, rf.currentTerm, dVote, "Convert to Candidate with term %v", rf.currentTerm)
 
 				for peer := 0; peer < len(rf.peers); peer++ {
 					if peer == rf.me {
@@ -374,7 +374,7 @@ func (rf *Raft) refreshElectionTimeout() {
 }
 
 func (rf *Raft) sendHeartbeats() {
-	Debug(rf.me, dTimer, "Leader, sending heartbeats")
+	Debug(rf.me, rf.currentTerm, dTimer, "Leader, sending heartbeats")
 	for peer := 0; peer < len(rf.peers); peer++ {
 		if peer == rf.me {
 			continue
@@ -389,7 +389,7 @@ func (rf *Raft) sendHeartbeats() {
 func (rf *Raft) maybeAdvanceTerm(term int) bool {
 	advance := term > rf.currentTerm
 	if advance {
-		Debug(rf.me, dState, "Received newer term %v > %v. Converting to Follower.", term, rf.currentTerm)
+		Debug(rf.me, rf.currentTerm, dState, "Received newer term %v > %v. Converting to Follower.", term, rf.currentTerm)
 		rf.advanceTerm(term)
 		rf.role = Follower
 	}
@@ -441,7 +441,7 @@ func Make(peers []*labrpc.ClientEnd,
 	// initialize from state persisted before a crash
 	rf.readPersist(persister.ReadRaftState())
 
-	Debug(me, dLog, "Hello World!")
+	Debug(rf.me, rf.currentTerm, dLog, "Hello World!")
 	// start ticker goroutine to start elections
 	go rf.ticker()
 
