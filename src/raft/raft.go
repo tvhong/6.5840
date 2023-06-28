@@ -393,7 +393,12 @@ func (rf *Raft) maybeAdvanceTerm(term int) bool {
 	if advance {
 		Debug(rf.me, rf.currentTerm, dState, "Receive newer term %v > %v. Converting to Follower.", term, rf.currentTerm)
 		rf.advanceTerm(term)
+		prevRole := rf.role
 		rf.role = Follower
+
+		if prevRole == Leader {
+			rf.refreshElectionTimeout()
+		}
 	}
 
 	return advance
