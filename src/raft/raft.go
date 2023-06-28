@@ -234,11 +234,26 @@ func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply
 func (rf *Raft) sendRequestVote(server int, args *RequestVoteArgs, reply *RequestVoteReply) bool {
 	Debug(rf.me, dVote, "Request vote from server S%v", server)
 
+	currTerm := rf.currentTerm
+
 	ok := rf.peers[server].Call("Raft.RequestVote", args, reply)
 
 	rf.mu.Lock()
 
-	rf.updateTermIfNeeded(reply.Term)
+	if rf.currentTerm == currTerm {
+		rf.updateTermIfNeeded(reply.Term)
+
+		// TODO: change updateTermIfNeeded to return ok status
+		if reply.Term <= rf.currentTerm && reply.VoteGranted {
+			rf.votesReceived[server] = member
+
+			// Received majority votes
+			if len(rf.votesReceived) >= len(rf.peers)/2+1 {
+				Debug(rf.me, dVote, "Received majority votes, becoming leader. votesReceived: %v", rf.votesReceived)
+				rf.role = Leader
+			}
+		}
+	}
 
 	rf.mu.Unlock()
 
