@@ -438,11 +438,7 @@ func Make(peers []*labrpc.ClientEnd,
 	rf.currentTerm = 0
 	rf.votedFor = -1
 
-	//TODO: shouldn't hardcode leader
-	if me == 2 {
-		rf.role = Leader
-	}
-
+	rf.role = Follower
 	rf.refreshElectionTimeout()
 
 	// initialize from state persisted before a crash
