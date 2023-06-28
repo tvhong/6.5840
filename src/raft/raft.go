@@ -29,6 +29,10 @@ import (
 	"6.5840/labrpc"
 )
 
+type void struct{}
+
+var member void
+
 type Role string
 
 const (
@@ -79,6 +83,7 @@ type Raft struct {
 	dead                int32      // set by Kill()
 	role                Role       // The role of this node
 	nextElectionTimeout time.Time
+	votesReceived       map[int]void // Set containing the votes received, elements are server ids
 }
 
 // return currentTerm and whether this server
@@ -308,8 +313,13 @@ func (rf *Raft) ticker() {
 				Debug(rf.me, dVote, "Election timeout!")
 				rf.role = Candidate
 				rf.updateTerm(rf.currentTerm + 1)
+
 				rf.votedFor = rf.me
+				rf.votesReceived = make(map[int]void)
+				rf.votesReceived[rf.me] = member
+
 				rf.refreshElectionTimeout()
+
 				Debug(rf.me, dVote, "Convert to Candidate with term %v", rf.currentTerm)
 
 				for peer := 0; peer < len(rf.peers); peer++ {
@@ -371,6 +381,7 @@ func (rf *Raft) updateTerm(term int) {
 
 	rf.currentTerm = term
 	rf.votedFor = -1
+	rf.votesReceived = nil
 }
 
 // the service or tester wants to create a Raft server. the ports
