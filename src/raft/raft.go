@@ -174,8 +174,11 @@ func (rf *Raft) RequestVote(args *RequestVoteArgs, reply *RequestVoteReply) {
 	reply.VoteGranted = args.Term >= rf.currentTerm &&
 		(rf.votedFor == -1 || rf.votedFor == args.CandidateId)
 	if reply.VoteGranted {
+		Debug(rf.me, dVote, "Vote for server S%v", args.CandidateId)
 		rf.votedFor = args.CandidateId
 		rf.refreshElectionTimeout()
+	} else {
+		Debug(rf.me, dVote, "Do not vote for server S%v", args.CandidateId)
 	}
 
 	rf.maybeAdvanceTerm(args.Term)
