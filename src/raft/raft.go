@@ -171,6 +171,9 @@ func (rf *Raft) RequestVote(args *RequestVoteArgs, reply *RequestVoteReply) {
 
 	Debug(rf.me, rf.currentTerm, dVote, "Handle RequestVote from S%v, args: %v", args.CandidateId, args)
 
+	rf.maybeAdvanceTerm(args.Term)
+	reply.Term = rf.currentTerm
+
 	reply.VoteGranted = args.Term >= rf.currentTerm &&
 		(rf.votedFor == -1 || rf.votedFor == args.CandidateId)
 	if reply.VoteGranted {
@@ -180,9 +183,6 @@ func (rf *Raft) RequestVote(args *RequestVoteArgs, reply *RequestVoteReply) {
 	} else {
 		Debug(rf.me, rf.currentTerm, dVote, "Do not vote for server S%v", args.CandidateId)
 	}
-
-	rf.maybeAdvanceTerm(args.Term)
-	reply.Term = rf.currentTerm
 }
 
 func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply) {
@@ -191,14 +191,14 @@ func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply
 
 	Debug(rf.me, rf.currentTerm, dRpc, "Handle AppendEntries from leader S%v, args: %v", args.LeaderId, args)
 
+	rf.maybeAdvanceTerm(args.Term)
+	reply.Term = rf.currentTerm
+
 	if args.Term < rf.currentTerm {
 		reply.Success = false
 	} else {
 		reply.Success = true
 	}
-
-	rf.maybeAdvanceTerm(args.Term)
-	reply.Term = rf.currentTerm
 
 	rf.refreshElectionTimeout()
 }
