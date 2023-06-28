@@ -186,7 +186,7 @@ func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply
 	rf.mu.Lock()
 	defer rf.mu.Unlock()
 
-	Debug(rf.me, dInfo, "Handle AppendEntries from leader S%v, args: %v", args.LeaderId, args)
+	Debug(rf.me, dRpc, "Handle AppendEntries from leader S%v, args: %v", args.LeaderId, args)
 
 	if args.Term < rf.currentTerm {
 		reply.Success = false
@@ -261,7 +261,7 @@ func (rf *Raft) sendRequestVote(server int, args *RequestVoteArgs, reply *Reques
 
 func (rf *Raft) sendAppendEntries(server int, args *AppendEntriesArgs, reply *AppendEntriesReply) bool {
 
-	Debug(rf.me, dInfo, "Send appendEntries to server S%v", server)
+	Debug(rf.me, dRpc, "Send appendEntries to server S%v", server)
 
 	ok := rf.peers[server].Call("Raft.AppendEntries", args, reply)
 
