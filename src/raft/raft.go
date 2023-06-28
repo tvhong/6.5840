@@ -178,9 +178,8 @@ func (rf *Raft) RequestVote(args *RequestVoteArgs, reply *RequestVoteReply) {
 		rf.refreshElectionTimeout()
 	}
 
-	reply.Term = rf.currentTerm
-
 	rf.maybeAdvanceTerm(args.Term)
+	reply.Term = rf.currentTerm
 }
 
 func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply) {
@@ -195,9 +194,9 @@ func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply
 		reply.Success = true
 	}
 
+	rf.maybeAdvanceTerm(args.Term)
 	reply.Term = rf.currentTerm
 
-	rf.maybeAdvanceTerm(args.Term)
 	rf.refreshElectionTimeout()
 }
 
