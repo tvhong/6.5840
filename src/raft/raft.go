@@ -44,6 +44,9 @@ const (
 // Tester limits 10 heartbeat per second, and expects new leader to be elected
 // within 5s of failure
 const (
+	initElectionTimeoutMinMs = 100
+	initElectionTimeoutMaxMs = 300
+
 	electionTimeoutMinMs = 1300
 	electionTimeoutMaxMs = 1700
 )
@@ -370,6 +373,11 @@ func (rf *Raft) ticker() {
 /************************************************************************
  * Helper methods
  ***********************************************************************/
+func (rf *Raft) initElectionTimeout() {
+	rf.nextElectionTimeout = time.Now().
+		Add(time.Duration(Random(initElectionTimeoutMinMs, initElectionTimeoutMaxMs) * int(time.Millisecond)))
+}
+
 func (rf *Raft) refreshElectionTimeout() {
 	rf.nextElectionTimeout = time.Now().
 		Add(time.Duration(Random(electionTimeoutMinMs, electionTimeoutMaxMs) * int(time.Millisecond)))
@@ -439,7 +447,7 @@ func Make(peers []*labrpc.ClientEnd,
 	rf.votedFor = -1
 
 	rf.role = Follower
-	rf.refreshElectionTimeout()
+	rf.initElectionTimeout()
 
 	// initialize from state persisted before a crash
 	rf.readPersist(persister.ReadRaftState())
