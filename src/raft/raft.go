@@ -272,14 +272,14 @@ func (rf *Raft) sendRequestVote(server int, args *RequestVoteArgs, reply *Reques
 
 func (rf *Raft) sendAppendEntries(server int, args *AppendEntriesArgs, reply *AppendEntriesReply) bool {
 
+	rf.mu.Lock()
 	Debug(rf.me, rf.currentTerm, dRpc, "Send appendEntries to server S%v", server)
+	rf.mu.Unlock()
 
 	ok := rf.peers[server].Call("Raft.AppendEntries", args, reply)
 
 	rf.mu.Lock()
-
 	rf.maybeAdvanceTerm(reply.Term)
-
 	rf.mu.Unlock()
 
 	return ok
