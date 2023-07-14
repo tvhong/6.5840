@@ -88,6 +88,7 @@ type Raft struct {
 	role                Role       // The role of this node
 	nextElectionTimeout time.Time
 	votesReceived       map[int]void // Set containing the votes received, elements are server ids
+	votesReceived       map[int]void // Set containing the votes received, elements are server ids
 
 	commitIndex int
 	lastApplied int
@@ -293,6 +294,15 @@ func (rf *Raft) sendAppendEntries(server int, args *AppendEntriesArgs, reply *Ap
 
 	rf.mu.Lock()
 	rf.maybeAdvanceTerm(reply.Term)
+
+	// TODO: create new data structure to track responses
+	// TODO: count my own vote as yes
+
+	// If majority responded, commit
+	//   applyCh when majority vote received (increase lastApplied)
+	//   Increase commitIndex
+	//   Clean up tracking map once majority vote received
+	// Handle unknown logIndex (not found in tracking map or <commitIndex)
 	rf.mu.Unlock()
 
 	return ok
@@ -329,15 +339,6 @@ func (rf *Raft) Start(command interface{}) (int, int, bool) {
 		args := AppendEntriesArgs{Term: rf.currentTerm, LeaderId: rf.me}
 		reply := AppendEntriesReply{}
 		go rf.sendAppendEntries(peer, &args, &reply)
-
-		// TODO: create new data structure to track responses
-		// TODO: count my own vote as yes
-
-		// If majority responded, commit
-		//   applyCh when majority vote received (increase lastApplied)
-		//   Increase commitIndex
-		//   Clean up tracking map once majority vote received
-		// Handle unknown logIndex (not found in tracking map or <commitIndex)
 	}
 
 	return len(rf.log), rf.currentTerm, true
