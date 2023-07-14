@@ -445,7 +445,7 @@ func (rf *Raft) becomeLeader() {
 		rf.matchIndex[i] = 0
 	}
 
-	// TODO: does the leader need to send AppendEntries to communicate the successful election?
+	rf.sendHeartbeats()
 }
 
 /************************************************************************
