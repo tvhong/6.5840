@@ -344,11 +344,12 @@ func (rf *Raft) Start(command interface{}) (int, int, bool) {
 			continue
 		}
 
+		nextIndex := rf.nextIndex[peer]
 		args := AppendEntriesArgs{
 			Term:         rf.currentTerm,
 			LeaderId:     rf.me,
-			PrevLogIndex: rf.nextIndex[peer] - 1,
-			PrevLogTerm:  999,                                    // FIXME: with real LogEntry.Term
+			PrevLogIndex: nextIndex - 1,
+			PrevLogTerm:  rf.log[nextIndex].Term,
 			Entries:      rf.log[rf.nextIndex[peer]:len(rf.log)], // TODO: assert nextIndex <= len(rf.log)
 			LeaderCommit: rf.commitIndex,
 		}
