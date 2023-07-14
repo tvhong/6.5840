@@ -214,7 +214,8 @@ func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply
 	reply.Term = rf.currentTerm
 
 	if args.Term < rf.currentTerm {
-		Debug(rf.me, rf.currentTerm, dRpc, "Reject AppendEntries from S%v", args.LeaderId)
+		Debug(rf.me, rf.currentTerm, dRpc,
+			"Reject AppendEntries from S%v. Leader term (%v) < rf.currentTerm (%v)", args.LeaderId, args.Term, rf.currentTerm)
 		reply.Success = false
 	} else {
 		Debug(rf.me, rf.currentTerm, dRpc, "Accept AppendEntries from S%v", args.LeaderId)
