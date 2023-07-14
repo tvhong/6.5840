@@ -542,7 +542,8 @@ func (rf *Raft) maybeAppendNewEntries(args *AppendEntriesArgs) {
 		preAppendLength := len(rf.log)
 		rf.log = append(rf.log, args.Entries[newEntryIndex:]...)
 
-		Debug(rf.me, rf.currentTerm, dRpc, "preAppendLength: %v, postApendLength: %v", preAppendLength, len(rf.log))
+		Debug(rf.me, rf.currentTerm, dRpc,
+			"Appending new entries from leader S%v. preAppendLength: %v, postApendLength: %v", args.LeaderId, preAppendLength, len(rf.log))
 	}
 }
 
