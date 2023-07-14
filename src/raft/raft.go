@@ -248,12 +248,27 @@ func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply
 			}
 		}
 
+		// 3. 
 		if conflictLogIndex != -1 {
 			Debug(rf.me, rf.currentTerm, dRpc, "Delete conflicting logs from rf.log index %v onward.", conflictLogIndex)
 
 			rf.log = rf.log[:conflictLogIndex]
 		}
 
+		// 4. Append any new entries not already in the log
+		rf.log = append(rf.log, args.Entries[len(rf.log)-args.PrevLogIndex:]...)
+
+		// hasNewEntries = hasConflict || prevIndex + len(entries) > len(rf.log)
+		// startCopyEntryIndex = hasConflict ? conflictEntryIndex : len(rf.log) - prevLogIndex
+		// rf.log = append(rf.log, args.Entry[startCopyEntryIndex:]...)
+
+		// if noConflict and prevIndex + len(entries) <= len(rf.log), no-op
+		// startCopyEntryIndex = hasConflict ? conflictIndex : len(rf.log)
+		// if noConflict: loop thorugh all entries and assign to corresponding rf.log
+		// if conflictEntryIndex > len(args.Entries), no-op
+		// if conflictLogIndex == len(rf.log), rf.log = append(rf.log, args.Entry[conflictEntryIndex:]...)
+		// if conflictLogIndex > len(rf.log), throw exception
+		// Copy data from entries[conflictEntryIndex] into
 
 		// for i := Max(args.PrevLogIndex+1, conflictIndex); i < args.PrevLogIndex + n; i++ {
 		// 	rf.log = append(rf.log, args.Entries[i])
