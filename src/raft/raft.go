@@ -311,7 +311,9 @@ func (rf *Raft) sendAppendEntries(server int, args *AppendEntriesArgs, reply *Ap
 // term. the third return value is true if this server believes it is
 // the leader.
 func (rf *Raft) Start(command interface{}) (int, int, bool) {
-	// TODO: lock down
+	rf.mu.Lock()
+	defer rf.mu.Unlock()
+
 	if rf.role != Leader {
 		return len(rf.log) + 1, rf.currentTerm, false
 	}
