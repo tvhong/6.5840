@@ -227,16 +227,31 @@ func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply
 			args.PrevLogTerm)
 
 		reply.Success = false
-	} else if rf.currentTerm > 4 {
-		Debug(rf.me, rf.currentTerm, dRpc,
-			"Delete conflicting logs from index %v onward. The term in the corresponding rf.log (%v) is different from PrevLogTerm (%v) from S%v",
-			args.PrevLogIndex,
-			rf.log[args.PrevLogIndex].Term,
-			args.PrevLogTerm,
-			args.LeaderId)
-
-		rf.log = rf.log[:args.PrevLogIndex]
 	} else {
+		conflictStart := -1
+		n := Min(len(args.Entries), len(rf.log)-args.PrevLogIndex)
+		for i := 0; i < n; i++ {
+			if rf.log[args.PrevLogIndex+1+i] != args.Entries[i] {
+				conflictStart = args.PrevLogIndex + 1 + i
+				break
+			}
+		}
+
+		if conflictStart != -1 {
+			Debug(rf.me, rf.currentTerm, dRpc,
+				"Delete conflicting logs from index %v onward. The term in the corresponding rf.log (%v) is different from PrevLogTerm (%v) from S%v",
+				args.PrevLogIndex,
+				rf.log[args.PrevLogIndex].Term,
+				args.PrevLogTerm,
+				args.LeaderId)
+			// TODO: clear data
+			// rf.log = rf.log[:args.PrevLogIndex]
+			// assign values from entries
+		} else {
+			// assign values from entries if needed
+			//
+		}
+
 		Debug(rf.me, rf.currentTerm, dRpc, "Accept AppendEntries from S%v", args.LeaderId)
 		reply.Success = true
 	}

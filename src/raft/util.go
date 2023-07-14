@@ -47,6 +47,13 @@ func Random(min int, max int) int {
 	return rand.Intn(max-min+1) + min
 }
 
+func Min(a, b int) int {
+	if a <= b {
+		return a
+	}
+	return b
+}
+
 func init() {
 	debugVerbosity = getVerbosity()
 	debugStart = time.Now()
