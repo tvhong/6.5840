@@ -271,14 +271,7 @@ func (rf *Raft) sendRequestVote(server int, args *RequestVoteArgs, reply *Reques
 			// Received majority votes
 			if len(rf.votesReceived) >= len(rf.peers)/2+1 {
 				Debug(rf.me, rf.currentTerm, dVote, "Receive majority votes, becoming leader. votesReceived: %v", rf.votesReceived)
-				rf.role = Leader
-
-				rf.nextIndex = make([]int, len(rf.peers))
-				rf.matchIndex = make([]int, len(rf.peers))
-				for i := 0; i < len(rf.peers); i++ {
-					rf.nextIndex[i] = len(rf.log) + 1
-					rf.matchIndex[i] = 0
-				}
+				rf.becomeLeader()
 			}
 		}
 	} else {
@@ -442,6 +435,22 @@ func (rf *Raft) advanceTerm(term int) {
 	rf.votesReceived = nil
 }
 
+func (rf *Raft) becomeLeader() {
+	rf.role = Leader
+
+	rf.nextIndex = make([]int, len(rf.peers))
+	rf.matchIndex = make([]int, len(rf.peers))
+	for i := 0; i < len(rf.peers); i++ {
+		rf.nextIndex[i] = len(rf.log) + 1
+		rf.matchIndex[i] = 0
+	}
+
+	// TODO: does the leader need to send AppendEntries to communicate the successful election?
+}
+
+/************************************************************************
+ * Factory
+ ***********************************************************************/
 // the service or tester wants to create a Raft server. the ports
 // of all the Raft servers (including this one) are in peers[]. this
 // server's port is peers[me]. all the servers' peers[] arrays
