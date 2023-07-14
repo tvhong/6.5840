@@ -230,8 +230,8 @@ func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply
 	} else {
 		var hasConflict bool
 		var conflictIndex int
-
 		hasConflict, conflictIndex = rf.findConflictIndex(args)
+
 		rf.maybeDeleteConflictingEntries(hasConflict, conflictIndex)
 		rf.maybeAppendNewEntries(args)
 
@@ -574,7 +574,7 @@ func Make(
 	rf.currentTerm = 0
 	rf.votedFor = -1
 
-	rf.log = make([]interface{}, 0)
+	rf.log = make([]LogEntry, 0)
 	rf.commitIndex = 0
 	rf.lastApplied = 0
 
