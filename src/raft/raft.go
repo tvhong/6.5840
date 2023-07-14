@@ -255,9 +255,13 @@ func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply
 		}
 
 		// 4. Append any new entries not already in the log
-		preAppendLength := len(rf.log)
-		rf.log = append(rf.log, args.Entries[len(rf.log)-args.PrevLogIndex:]...)
-		Debug(rf.me, rf.currentTerm, dRpc, "preAppendLength: %v, postApendLength: %v", preAppendLength, len(rf.log))
+		newEntryIndex := len(rf.log) - args.PrevLogIndex
+		if newEntryIndex < len(args.Entries) {
+			preAppendLength := len(rf.log)
+			rf.log = append(rf.log, args.Entries[newEntryIndex:]...)
+
+			Debug(rf.me, rf.currentTerm, dRpc, "preAppendLength: %v, postApendLength: %v", preAppendLength, len(rf.log))
+		}
 
 		Debug(rf.me, rf.currentTerm, dRpc, "Accept AppendEntries from S%v", args.LeaderId)
 		reply.Success = true
