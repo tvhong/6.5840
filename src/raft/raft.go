@@ -228,24 +228,24 @@ func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply
 
 		reply.Success = false
 	} else {
-		conflictStart := -1
+		conflictIndex := -1
 		n := Min(len(args.Entries), len(rf.log)-args.PrevLogIndex)
 		for i := 0; i < n; i++ {
 			if rf.log[args.PrevLogIndex+1+i] != args.Entries[i] {
-				conflictStart = args.PrevLogIndex + 1 + i
+				conflictIndex = args.PrevLogIndex + 1 + i
 				break
 			}
 		}
 
-		if conflictStart != -1 {
+		if conflictIndex != -1 {
 			Debug(rf.me, rf.currentTerm, dRpc,
 				"Delete conflicting logs from index %v onward. The term in the corresponding rf.log (%v) is different from PrevLogTerm (%v) from S%v",
 				args.PrevLogIndex,
 				rf.log[args.PrevLogIndex].Term,
 				args.PrevLogTerm,
 				args.LeaderId)
-			// TODO: clear data
-			// rf.log = rf.log[:args.PrevLogIndex]
+
+			rf.log = rf.log[:conflictIndex]
 			// assign values from entries
 		} else {
 			// assign values from entries if needed
