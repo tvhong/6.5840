@@ -221,6 +221,15 @@ func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply
 		Debug(rf.me, rf.currentTerm, dRpc,
 			"Reject AppendEntries from S%v. Log (len: %v) does not contain PrevLogIndex (%v)", args.LeaderId, len(rf.log), args.PrevLogIndex)
 		reply.Success = false
+	} else if rf.log[args.PrevLogIndex].Term != args.PrevLogTerm {
+		Debug(rf.me, rf.currentTerm, dRpc,
+			"Delete conflicting logs as term in rf.log[%v] (%v) is different from leader's (S%v) PrevLogTerm (%v)",
+			args.PrevLogIndex,
+			rf.log[args.PrevLogIndex],
+			args.LeaderId,
+			args.PrevLogTerm)
+
+		
 	} else {
 		Debug(rf.me, rf.currentTerm, dRpc, "Accept AppendEntries from S%v", args.LeaderId)
 		reply.Success = true
