@@ -87,6 +87,12 @@ type Raft struct {
 	role                Role       // The role of this node
 	nextElectionTimeout time.Time
 	votesReceived       map[int]void // Set containing the votes received, elements are server ids
+
+	commitIndex int
+	lastApplied int
+
+	nextIndex  []int
+	matchIndex []int
 }
 
 // return currentTerm and whether this server
@@ -445,14 +451,20 @@ func Make(peers []*labrpc.ClientEnd,
 	rf.persister = persister
 	rf.me = me
 
-	// TODO (2C): read from persisted states
 	rf.role = Follower
 	rf.currentTerm = 0
 	rf.votedFor = -1
 
+	rf.commitIndex = 0
+	rf.lastApplied = 0
+
+	rf.nextIndex = make([]int, 0)
+	rf.matchIndex = make([]int, 0)
+
 	rf.role = Follower
 	rf.initElectionTimeout()
 
+	// TODO (2C): read from persisted states
 	// initialize from state persisted before a crash
 	rf.readPersist(persister.ReadRaftState())
 
