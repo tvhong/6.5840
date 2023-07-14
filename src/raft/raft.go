@@ -475,6 +475,7 @@ func Make(
 	rf.currentTerm = 0
 	rf.votedFor = -1
 
+	rf.log = make([]interface{}, 0)
 	rf.commitIndex = 0
 	rf.lastApplied = 0
 
