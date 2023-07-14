@@ -231,8 +231,9 @@ func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply
 		conflictIndex := -1
 		n := Min(len(args.Entries), len(rf.log)-args.PrevLogIndex)
 		for i := 0; i < n; i++ {
-			if rf.log[args.PrevLogIndex+1+i] != args.Entries[i] {
-				conflictIndex = args.PrevLogIndex + 1 + i
+			j := args.PrevLogIndex + 1 + i
+			if args.Entries[i] != rf.log[j] {
+				conflictIndex = j
 
 				Debug(rf.me, rf.currentTerm, dRpc,
 					"Found conflicting log at index %v. Entry in log: %v, entry in args: %v. Leader Id: %v",
