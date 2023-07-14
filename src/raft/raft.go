@@ -233,24 +233,25 @@ func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply
 		for i := 0; i < n; i++ {
 			if rf.log[args.PrevLogIndex+1+i] != args.Entries[i] {
 				conflictIndex = args.PrevLogIndex + 1 + i
+
+				Debug(rf.me, rf.currentTerm, dRpc,
+					"Found conflicting log at index %v. Entry in log: %v, entry in args: %v. Leader Id: %v",
+					conflictIndex,
+					rf.log[conflictIndex],
+					args.Entries[i],
+					args.LeaderId)
+
 				break
 			}
 		}
 
 		if conflictIndex != -1 {
-			Debug(rf.me, rf.currentTerm, dRpc,
-				"Delete conflicting logs from index %v onward. The term in the corresponding rf.log (%v) is different from PrevLogTerm (%v) from S%v",
-				args.PrevLogIndex,
-				rf.log[args.PrevLogIndex].Term,
-				args.PrevLogTerm,
-				args.LeaderId)
+			Debug(rf.me, rf.currentTerm, dRpc, "Delete conflicting logs from index %v onward.", conflictIndex)
 
 			rf.log = rf.log[:conflictIndex]
-			// assign values from entries
-		} else {
-			// assign values from entries if needed
-			//
 		}
+
+		// assign values from entries if needed
 
 		Debug(rf.me, rf.currentTerm, dRpc, "Accept AppendEntries from S%v", args.LeaderId)
 		reply.Success = true
