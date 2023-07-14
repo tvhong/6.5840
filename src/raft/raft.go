@@ -164,8 +164,12 @@ type RequestVoteReply struct {
 }
 
 type AppendEntriesArgs struct {
-	Term     int
-	LeaderId int
+	Term         int
+	LeaderId     int
+	PrevLogIndex int
+	PrevLogTerm  int
+	Entries      []interface{}
+	LeaderCommit int
 }
 
 type AppendEntriesReply struct {
