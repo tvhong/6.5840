@@ -516,9 +516,12 @@ func (rf *Raft) becomeLeader() {
 
 func (rf *Raft) findConflictIndex(args *AppendEntriesArgs) (bool, int) {
 	conflictIndex := -1
-	n := Min(len(args.Entries), len(rf.log)-args.PrevLogIndex)
-	for i := 0; i < n; i++ {
+	for i := 0; i < len(args.Entries); i++ {
 		j := args.PrevLogIndex + 1 + i
+		if j >= len(rf.log) {
+			break
+		}
+
 		if args.Entries[i] != rf.log[j] {
 			conflictIndex = j
 
