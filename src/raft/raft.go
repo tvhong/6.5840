@@ -460,7 +460,8 @@ func (rf *Raft) becomeLeader() {
 // tester or service expects Raft to send ApplyMsg messages.
 // Make() must return quickly, so it should start goroutines
 // for any long-running work.
-func Make(peers []*labrpc.ClientEnd,
+func Make(
+	peers []*labrpc.ClientEnd,
 	me int,
 	persister *Persister,
 	applyCh chan ApplyMsg) *Raft {
@@ -480,7 +481,6 @@ func Make(peers []*labrpc.ClientEnd,
 	rf.nextIndex = make([]int, 0)
 	rf.matchIndex = make([]int, 0)
 
-	rf.role = Follower
 	rf.initElectionTimeout()
 
 	// TODO (2C): read from persisted states
