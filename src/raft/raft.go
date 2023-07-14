@@ -321,12 +321,24 @@ func (rf *Raft) Start(command interface{}) (int, int, bool) {
 	}
 
 	rf.log = append(rf.log, command)
-	// Start AppendEntries calls
-	// If majority responded, commit
-	//   applyCh when majority vote received (increase lastApplied)
-	//   Increase commitIndex
-	//   Clean up tracking map once majority vote received
-	// Handle unknown logIndex (not found in tracking map or <commitIndex)
+	for peer := 0; peer < len(rf.peers); peer++ {
+		if peer == rf.me {
+			continue
+		}
+
+		args := AppendEntriesArgs{Term: rf.currentTerm, LeaderId: rf.me}
+		reply := AppendEntriesReply{}
+		go rf.sendAppendEntries(peer, &args, &reply)
+
+		// TODO: create new data structure to track responses
+		// TODO: count my own vote as yes
+
+		// If majority responded, commit
+		//   applyCh when majority vote received (increase lastApplied)
+		//   Increase commitIndex
+		//   Clean up tracking map once majority vote received
+		// Handle unknown logIndex (not found in tracking map or <commitIndex)
+	}
 
 	return len(rf.log), rf.currentTerm, true
 }
