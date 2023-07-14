@@ -317,17 +317,18 @@ func (rf *Raft) Start(command interface{}) (int, int, bool) {
 	Debug(rf.me, rf.currentTerm, dAppend, "Start a command len(rf.log)=%v", len(rf.log))
 
 	if rf.role != Leader {
-		return len(rf.log) + 1, rf.currentTerm, false
+		return -1, rf.currentTerm, false
 	}
 
-	// Your code here (2B).
-	// rf.log = append(rf.log, command)
+	rf.log = append(rf.log, command)
+	// Start AppendEntries calls
+	// If majority responded, commit
+	//   applyCh when majority vote received (increase lastApplied)
+	//   Increase commitIndex
+	//   Clean up tracking map once majority vote received
+	// Handle unknown logIndex (not found in tracking map or <commitIndex)
 
-	index := -1
-	term := -1
-	isLeader := true
-
-	return index, term, isLeader
+	return len(rf.log), rf.currentTerm, true
 }
 
 // the tester doesn't halt goroutines created by Raft after each test,
