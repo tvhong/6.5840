@@ -223,13 +223,13 @@ func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply
 		reply.Success = false
 	} else if rf.log[args.PrevLogIndex].Term != args.PrevLogTerm {
 		Debug(rf.me, rf.currentTerm, dRpc,
-			"Delete conflicting logs as term in rf.log[%v] (%v) is different from leader's (S%v) PrevLogTerm (%v)",
+			"Delete conflicting logs from index %v onward. The term in the corresponding rf.log (%v) is different from PrevLogTerm (%v) from S%v",
 			args.PrevLogIndex,
-			rf.log[args.PrevLogIndex],
-			args.LeaderId,
-			args.PrevLogTerm)
+			rf.log[args.PrevLogIndex].Term,
+			args.PrevLogTerm,
+			args.LeaderId)
 
-		
+		rf.log = rf.log[:args.PrevLogIndex]
 	} else {
 		Debug(rf.me, rf.currentTerm, dRpc, "Accept AppendEntries from S%v", args.LeaderId)
 		reply.Success = true
