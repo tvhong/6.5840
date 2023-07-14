@@ -228,31 +228,36 @@ func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply
 
 		reply.Success = false
 	} else {
-		conflictIndex := -1
+		conflictEntryIndex := -1
+		conflictLogIndex := -1
 		n := Min(len(args.Entries), len(rf.log)-args.PrevLogIndex)
 		for i := 0; i < n; i++ {
 			j := args.PrevLogIndex + 1 + i
 			if args.Entries[i] != rf.log[j] {
-				conflictIndex = j
+				conflictEntryIndex = i
+				conflictLogIndex = j
 
 				Debug(rf.me, rf.currentTerm, dRpc,
 					"Found conflicting log at index %v. Entry in log: %v, entry in args: %v. Leader Id: %v",
-					conflictIndex,
-					rf.log[conflictIndex],
-					args.Entries[i],
+					conflictLogIndex,
+					rf.log[conflictLogIndex],
+					args.Entries[conflictEntryIndex],
 					args.LeaderId)
 
 				break
 			}
 		}
 
-		if conflictIndex != -1 {
-			Debug(rf.me, rf.currentTerm, dRpc, "Delete conflicting logs from index %v onward.", conflictIndex)
+		if conflictLogIndex != -1 {
+			Debug(rf.me, rf.currentTerm, dRpc, "Delete conflicting logs from rf.log index %v onward.", conflictLogIndex)
 
-			rf.log = rf.log[:conflictIndex]
+			rf.log = rf.log[:conflictLogIndex]
 		}
 
-		// assign values from entries if needed
+
+		// for i := Max(args.PrevLogIndex+1, conflictIndex); i < args.PrevLogIndex + n; i++ {
+		// 	rf.log = append(rf.log, args.Entries[i])
+		// }
 
 		Debug(rf.me, rf.currentTerm, dRpc, "Accept AppendEntries from S%v", args.LeaderId)
 		reply.Success = true
