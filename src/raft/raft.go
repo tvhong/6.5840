@@ -271,6 +271,13 @@ func (rf *Raft) sendRequestVote(server int, args *RequestVoteArgs, reply *Reques
 			if len(rf.votesReceived) >= len(rf.peers)/2+1 {
 				Debug(rf.me, rf.currentTerm, dVote, "Receive majority votes, becoming leader. votesReceived: %v", rf.votesReceived)
 				rf.role = Leader
+
+				rf.nextIndex = make([]int, len(rf.peers))
+				rf.matchIndex = make([]int, len(rf.peers))
+				for i := 0; i < len(rf.peers); i++ {
+					rf.nextIndex[i] = 5
+					rf.matchIndex[i] = 0
+				}
 			}
 		}
 	} else {
