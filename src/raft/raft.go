@@ -228,25 +228,12 @@ func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply
 
 		reply.Success = false
 	} else {
-		conflictIndex := -1
-		n := Min(len(args.Entries), len(rf.log)-args.PrevLogIndex)
-		for i := 0; i < n; i++ {
-			j := args.PrevLogIndex + 1 + i
-			if args.Entries[i] != rf.log[j] {
-				conflictIndex = j
+		var hasConflict bool
+		var conflictIndex int
 
-				Debug(rf.me, rf.currentTerm, dRpc,
-					"Found conflicting log at index %v. Entry in log: %v, entry in args: %v. Leader Id: %v",
-					conflictIndex,
-					rf.log[conflictIndex],
-					args.Entries[i],
-					args.LeaderId)
+		hasConflict, conflictIndex = rf.findConflictIndex(args)
 
-				break
-			}
-		}
-
-		if conflictIndex != -1 {
+		if hasConflict {
 			Debug(rf.me, rf.currentTerm, dRpc, "Delete conflicting logs from rf.log index %v onward.", conflictIndex)
 
 			rf.log = rf.log[:conflictIndex]
@@ -530,6 +517,28 @@ func (rf *Raft) becomeLeader() {
 	}
 
 	rf.sendHeartbeats()
+}
+
+func (rf *Raft) findConflictIndex(args *AppendEntriesArgs) (bool, int) {
+	conflictIndex := -1
+	n := Min(len(args.Entries), len(rf.log)-args.PrevLogIndex)
+	for i := 0; i < n; i++ {
+		j := args.PrevLogIndex + 1 + i
+		if args.Entries[i] != rf.log[j] {
+			conflictIndex = j
+
+			Debug(rf.me, rf.currentTerm, dRpc,
+				"Found conflicting log at index %v. Entry in log: %v, entry in args: %v. Leader Id: %v",
+				conflictIndex,
+				rf.log[conflictIndex],
+				args.Entries[i],
+				args.LeaderId)
+
+			break
+		}
+	}
+
+	return conflictIndex != -1, conflictIndex
 }
 
 /************************************************************************
