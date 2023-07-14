@@ -96,6 +96,11 @@ type Raft struct {
 	matchIndex []int
 }
 
+type LogEntry struct {
+	Term    int
+	Command interface{}
+}
+
 // return currentTerm and whether this server
 // believes it is the leader.
 func (rf *Raft) GetState() (int, bool) {
