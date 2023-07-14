@@ -228,17 +228,17 @@ func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply
 
 		reply.Success = false
 	} else {
-		conflictLogIndex := -1
+		conflictIndex := -1
 		n := Min(len(args.Entries), len(rf.log)-args.PrevLogIndex)
 		for i := 0; i < n; i++ {
 			j := args.PrevLogIndex + 1 + i
 			if args.Entries[i] != rf.log[j] {
-				conflictLogIndex = j
+				conflictIndex = j
 
 				Debug(rf.me, rf.currentTerm, dRpc,
 					"Found conflicting log at index %v. Entry in log: %v, entry in args: %v. Leader Id: %v",
-					conflictLogIndex,
-					rf.log[conflictLogIndex],
+					conflictIndex,
+					rf.log[conflictIndex],
 					args.Entries[i],
 					args.LeaderId)
 
@@ -246,10 +246,10 @@ func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply
 			}
 		}
 
-		if conflictLogIndex != -1 {
-			Debug(rf.me, rf.currentTerm, dRpc, "Delete conflicting logs from rf.log index %v onward.", conflictLogIndex)
+		if conflictIndex != -1 {
+			Debug(rf.me, rf.currentTerm, dRpc, "Delete conflicting logs from rf.log index %v onward.", conflictIndex)
 
-			rf.log = rf.log[:conflictLogIndex]
+			rf.log = rf.log[:conflictIndex]
 		}
 
 		// 4. Append any new entries not already in the log
