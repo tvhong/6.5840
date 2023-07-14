@@ -461,7 +461,15 @@ func (rf *Raft) sendHeartbeats() {
 			continue
 		}
 
-		args := AppendEntriesArgs{Term: rf.currentTerm, LeaderId: rf.me}
+		nextIndex := rf.nextIndex[peer]
+		args := AppendEntriesArgs{
+			Term:         rf.currentTerm,
+			LeaderId:     rf.me,
+			PrevLogIndex: nextIndex - 1,
+			PrevLogTerm:  rf.log[nextIndex].Term,
+			Entries:      make([]LogEntry, 0),
+			LeaderCommit: rf.commitIndex,
+		}
 		reply := AppendEntriesReply{}
 		go rf.sendAppendEntries(peer, &args, &reply)
 	}
