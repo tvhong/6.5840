@@ -233,15 +233,7 @@ func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply
 
 		hasConflict, conflictIndex = rf.findConflictIndex(args)
 		rf.maybeDeleteConflictingEntries(hasConflict, conflictIndex)
-
-		// 4. Append any new entries not already in the log
-		newEntryIndex := len(rf.log) - args.PrevLogIndex
-		if newEntryIndex < len(args.Entries) {
-			preAppendLength := len(rf.log)
-			rf.log = append(rf.log, args.Entries[newEntryIndex:]...)
-
-			Debug(rf.me, rf.currentTerm, dRpc, "preAppendLength: %v, postApendLength: %v", preAppendLength, len(rf.log))
-		}
+		rf.maybeAppendNewEntries(args)
 
 		Debug(rf.me, rf.currentTerm, dRpc, "Accept AppendEntries from S%v", args.LeaderId)
 		reply.Success = true
@@ -541,6 +533,16 @@ func (rf *Raft) maybeDeleteConflictingEntries(hasConflict bool, conflictIndex in
 		Debug(rf.me, rf.currentTerm, dRpc, "Delete conflicting logs from rf.log index %v onward.", conflictIndex)
 
 		rf.log = rf.log[:conflictIndex]
+	}
+}
+
+func (rf *Raft) maybeAppendNewEntries(args *AppendEntriesArgs) {
+	newEntryIndex := len(rf.log) - args.PrevLogIndex
+	if newEntryIndex < len(args.Entries) {
+		preAppendLength := len(rf.log)
+		rf.log = append(rf.log, args.Entries[newEntryIndex:]...)
+
+		Debug(rf.me, rf.currentTerm, dRpc, "preAppendLength: %v, postApendLength: %v", preAppendLength, len(rf.log))
 	}
 }
 
