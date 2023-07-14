@@ -367,7 +367,7 @@ func (rf *Raft) Start(command interface{}) (int, int, bool) {
 			Term:         rf.currentTerm,
 			LeaderId:     rf.me,
 			PrevLogIndex: nextIndex - 1,
-			PrevLogTerm:  rf.log[nextIndex].Term,
+			PrevLogTerm:  rf.log[nextIndex-1].Term,
 			Entries:      rf.log[nextIndex:len(rf.log)], // TODO: assert nextIndex <= len(rf.log)
 			LeaderCommit: rf.commitIndex,
 		}
@@ -466,7 +466,7 @@ func (rf *Raft) sendHeartbeats() {
 			Term:         rf.currentTerm,
 			LeaderId:     rf.me,
 			PrevLogIndex: nextIndex - 1,
-			PrevLogTerm:  rf.log[nextIndex].Term,
+			PrevLogTerm:  rf.log[nextIndex-1].Term,
 			Entries:      make([]LogEntry, 0),
 			LeaderCommit: rf.commitIndex,
 		}
