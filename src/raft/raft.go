@@ -88,7 +88,6 @@ type Raft struct {
 	role                Role       // The role of this node
 	nextElectionTimeout time.Time
 	votesReceived       map[int]void // Set containing the votes received, elements are server ids
-	votesReceived       map[int]void // Set containing the votes received, elements are server ids
 
 	commitIndex int
 	lastApplied int
@@ -340,7 +339,14 @@ func (rf *Raft) Start(command interface{}) (int, int, bool) {
 			continue
 		}
 
-		args := AppendEntriesArgs{Term: rf.currentTerm, LeaderId: rf.me}
+		args := AppendEntriesArgs{
+			Term:         rf.currentTerm,
+			LeaderId:     rf.me,
+			PrevLogIndex: rf.nextIndex[peer] - 1,
+			PrevLogTerm:  999,                                    // FIXME: with real LogEntry.Term
+			Entries:      rf.log[rf.nextIndex[peer]:len(rf.log)], // TODO: assert nextIndex <= len(rf.log)
+			LeaderCommit: rf.commitIndex,
+		}
 		reply := AppendEntriesReply{}
 		go rf.sendAppendEntries(peer, &args, &reply)
 	}
