@@ -79,7 +79,7 @@ type Raft struct {
 	peers       []*labrpc.ClientEnd // RPC end points of all peers
 	currentTerm int                 // The latest term the server has seen
 	votedFor    int                 // The peer that this node voted for, -1 means not voted for any node
-	log         []interface{}
+	log         []LogEntry
 
 	// volatile
 	mu                  sync.Mutex // Lock to protect shared access to this peer's state
@@ -172,7 +172,7 @@ type AppendEntriesArgs struct {
 	LeaderId     int
 	PrevLogIndex int
 	PrevLogTerm  int
-	Entries      []interface{}
+	Entries      []LogEntry
 	LeaderCommit int
 }
 
@@ -338,7 +338,7 @@ func (rf *Raft) Start(command interface{}) (int, int, bool) {
 		return -1, rf.currentTerm, false
 	}
 
-	rf.log = append(rf.log, command)
+	rf.log = append(rf.log, LogEntry{Term: rf.currentTerm, Command: command})
 	for peer := 0; peer < len(rf.peers); peer++ {
 		if peer == rf.me {
 			continue
