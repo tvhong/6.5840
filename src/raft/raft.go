@@ -79,6 +79,7 @@ type Raft struct {
 	peers       []*labrpc.ClientEnd // RPC end points of all peers
 	currentTerm int                 // The latest term the server has seen
 	votedFor    int                 // The peer that this node voted for, -1 means not voted for any node
+	log         []interface{}
 
 	// volatile
 	mu                  sync.Mutex // Lock to protect shared access to this peer's state
@@ -275,7 +276,7 @@ func (rf *Raft) sendRequestVote(server int, args *RequestVoteArgs, reply *Reques
 				rf.nextIndex = make([]int, len(rf.peers))
 				rf.matchIndex = make([]int, len(rf.peers))
 				for i := 0; i < len(rf.peers); i++ {
-					rf.nextIndex[i] = 5
+					rf.nextIndex[i] = len(rf.log) + 1
 					rf.matchIndex[i] = 0
 				}
 			}
