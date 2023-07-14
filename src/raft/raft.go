@@ -368,7 +368,7 @@ func (rf *Raft) Start(command interface{}) (int, int, bool) {
 			LeaderId:     rf.me,
 			PrevLogIndex: nextIndex - 1,
 			PrevLogTerm:  rf.log[nextIndex].Term,
-			Entries:      rf.log[rf.nextIndex[peer]:len(rf.log)], // TODO: assert nextIndex <= len(rf.log)
+			Entries:      rf.log[nextIndex:len(rf.log)], // TODO: assert nextIndex <= len(rf.log)
 			LeaderCommit: rf.commitIndex,
 		}
 		reply := AppendEntriesReply{}
