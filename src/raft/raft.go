@@ -217,11 +217,17 @@ func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply
 		Debug(rf.me, rf.currentTerm, dRpc,
 			"Reject AppendEntries from S%v. args.Term (%v) < rf.currentTerm (%v)", args.LeaderId, args.Term, rf.currentTerm)
 		reply.Success = false
-	} else if len(rf.log) <= args.PrevLogIndex {
+	} else if len(rf.log) <= args.PrevLogIndex || rf.log[args.PrevLogIndex].Term != args.PrevLogTerm {
 		Debug(rf.me, rf.currentTerm, dRpc,
-			"Reject AppendEntries from S%v. Log (len: %v) does not contain PrevLogIndex (%v)", args.LeaderId, len(rf.log), args.PrevLogIndex)
+			"Reject AppendEntries from S%v. len(rf.log) (%v) <= PrevLogIndex (%v) || rf.log[PrevLogIndex].Term (%v) != PrevLogTerm (%v)",
+			args.LeaderId,
+			len(rf.log),
+			args.PrevLogIndex,
+			rf.log[args.PrevLogIndex].Term,
+			args.PrevLogTerm)
+
 		reply.Success = false
-	} else if rf.log[args.PrevLogIndex].Term != args.PrevLogTerm {
+	} else if rf.currentTerm > 4 {
 		Debug(rf.me, rf.currentTerm, dRpc,
 			"Delete conflicting logs from index %v onward. The term in the corresponding rf.log (%v) is different from PrevLogTerm (%v) from S%v",
 			args.PrevLogIndex,
