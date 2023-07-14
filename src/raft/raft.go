@@ -232,12 +232,7 @@ func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply
 		var conflictIndex int
 
 		hasConflict, conflictIndex = rf.findConflictIndex(args)
-
-		if hasConflict {
-			Debug(rf.me, rf.currentTerm, dRpc, "Delete conflicting logs from rf.log index %v onward.", conflictIndex)
-
-			rf.log = rf.log[:conflictIndex]
-		}
+		rf.maybeDeleteConflictingEntries(hasConflict, conflictIndex)
 
 		// 4. Append any new entries not already in the log
 		newEntryIndex := len(rf.log) - args.PrevLogIndex
@@ -539,6 +534,14 @@ func (rf *Raft) findConflictIndex(args *AppendEntriesArgs) (bool, int) {
 	}
 
 	return conflictIndex != -1, conflictIndex
+}
+
+func (rf *Raft) maybeDeleteConflictingEntries(hasConflict bool, conflictIndex int) {
+	if hasConflict {
+		Debug(rf.me, rf.currentTerm, dRpc, "Delete conflicting logs from rf.log index %v onward.", conflictIndex)
+
+		rf.log = rf.log[:conflictIndex]
+	}
 }
 
 /************************************************************************
