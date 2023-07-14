@@ -273,6 +273,8 @@ func (rf *Raft) sendRequestVote(server int, args *RequestVoteArgs, reply *Reques
 				rf.role = Leader
 			}
 		}
+	} else {
+		Debug(rf.me, rf.currentTerm, dVote, "Received RequestVote response from S%v for term %v, but this node's term has changed", server, currTerm)
 	}
 
 	rf.mu.Unlock()
