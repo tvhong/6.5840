@@ -19,10 +19,11 @@ const (
 	dLog  logTopic = "LOG1"
 	dLog2 logTopic = "LOG2"
 
-	dTimer logTopic = "TIMR"
-	dVote  logTopic = "VOTE"
-	dState logTopic = "STAT"
-	dRpc   logTopic = "RPC_"
+	dRpc    logTopic = "RPC_"
+	dTimer  logTopic = "TIMR"
+	dVote   logTopic = "VOTE"
+	dState  logTopic = "STAT" // state change
+	dAppend logTopic = "APPD" // appending command
 )
 
 var debugStart time.Time

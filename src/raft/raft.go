@@ -314,6 +314,8 @@ func (rf *Raft) Start(command interface{}) (int, int, bool) {
 	rf.mu.Lock()
 	defer rf.mu.Unlock()
 
+	Debug(rf.me, rf.currentTerm, dAppend, "Start a command len(rf.log)=%v", len(rf.log))
+
 	if rf.role != Leader {
 		return len(rf.log) + 1, rf.currentTerm, false
 	}
