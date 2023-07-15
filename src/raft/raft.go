@@ -228,11 +228,7 @@ func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply
 
 		reply.Success = false
 	} else {
-		var hasConflict bool
-		var conflictIndex int
-		hasConflict, conflictIndex = rf.findConflictIndex(args)
-
-		rf.maybeDeleteConflictingEntries(hasConflict, conflictIndex)
+		rf.maybeDeleteConflictingEntries(args)
 		rf.maybeAppendNewEntries(args)
 		rf.maybeUpdateCommitIndex(args)
 
@@ -525,7 +521,11 @@ func (rf *Raft) findConflictIndex(args *AppendEntriesArgs) (bool, int) {
 	return conflictIndex != -1, conflictIndex
 }
 
-func (rf *Raft) maybeDeleteConflictingEntries(hasConflict bool, conflictIndex int) {
+func (rf *Raft) maybeDeleteConflictingEntries(args *AppendEntriesArgs) {
+	var hasConflict bool
+	var conflictIndex int
+	hasConflict, conflictIndex = rf.findConflictIndex(args)
+
 	if hasConflict {
 		if conflictIndex >= rf.commitIndex {
 			Fatal(rf.me, rf.currentTerm, "There is a conflict (conflictIndex: %v) at or before commitIndex (%v). This violates Leader Completeness property.")
