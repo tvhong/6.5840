@@ -321,9 +321,10 @@ func (rf *Raft) sendAppendEntries(server int, args *AppendEntriesArgs, reply *Ap
 
 	rf.mu.Lock()
 	rf.maybeAdvanceTerm(reply.Term)
+	// TODO: if advanced term, then don't process anything
 
 	if reply.Success {
-		peerWrittenIndex :=  args.PrevLogIndex + len(args.Entries)
+		peerWrittenIndex := args.PrevLogIndex + len(args.Entries)
 
 		if peerWrittenIndex < rf.matchIndex[server] {
 			Fatal(rf.me, rf.currentTerm,
@@ -332,6 +333,14 @@ func (rf *Raft) sendAppendEntries(server int, args *AppendEntriesArgs, reply *Ap
 		}
 
 		rf.matchIndex[server] = peerWrittenIndex
+
+		rf.nextIndex[server] = peerWrittenIndex + 1
+	} else {
+		if args.PrevLogIndex == 0 {
+			Fatal(rf.me, rf.currentTerm, "Follower S%s rejected AppendEntries with PrevLogIndex=%v. Reply=%v", server, args.PrevLogIndex, reply)
+		}
+
+		rf.nextIndex[server] = args.PrevLogIndex / 2
 	}
 	// TODO: count my own vote as yes
 
