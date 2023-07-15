@@ -528,19 +528,19 @@ func (rf *Raft) maybeAppendNewEntries(args *AppendEntriesArgs) {
 }
 
 func (rf *Raft) maybeAdvanceCommitIndex(args *AppendEntriesArgs) {
-	if args.LeaderCommit > rf.commitIndex {
-		commitIndex := Min(args.LeaderCommit, len(rf.log)-1)
+	commitIndex := Min(args.LeaderCommit, len(rf.log)-1)
+	if commitIndex > rf.commitIndex {
 		rf.advanceCommitIndex(commitIndex)
 	}
 }
 
 func (rf *Raft) advanceCommitIndex(commitIndex int) {
-	if commitIndex < rf.commitIndex {
-		Fatal(rf.me, rf.currentTerm, "Trying to decrease commitIndex. rf.commitIndex=%v, commitIndex=%v", rf.commitIndex, commitIndex)
+	if commitIndex <= rf.commitIndex {
+		Fatal(rf.me, rf.currentTerm, "Trying to decrease or equate commitIndex. rf.commitIndex=%v, commitIndex=%v", rf.commitIndex, commitIndex)
 	}
 
 	rf.commitIndex = commitIndex
-	// TODO: call applyCh
+	rf.applyManagerCh <- true
 }
 
 func (rf *Raft) createAppendEntriesArgs(nextIndex int, entries []LogEntry) AppendEntriesArgs {
