@@ -331,43 +331,6 @@ func (rf *Raft) sendAppendEntries(server int, args *AppendEntriesArgs, reply *Ap
 
 	return ok
 }
-
-// the service using Raft (e.g. a k/v server) wants to start
-// agreement on the next command to be appended to Raft's log. if this
-// server isn't the leader, returns false. otherwise start the
-// agreement and return immediately. there is no guarantee that this
-// command will ever be committed to the Raft log, since the leader
-// may fail or lose an election. even if the Raft instance has been killed,
-// this function should return gracefully.
-//
-// the first return value is the index that the command will appear at
-// if it's ever committed. the second return value is the current
-// term. the third return value is true if this server believes it is
-// the leader.
-func (rf *Raft) Start(command interface{}) (int, int, bool) {
-	rf.mu.Lock()
-	defer rf.mu.Unlock()
-
-	Debug(rf.me, rf.currentTerm, dAppend, "Start a command len(rf.log)=%v", len(rf.log))
-
-	if rf.role != Leader {
-		return -1, rf.currentTerm, false
-	}
-
-	rf.log = append(rf.log, LogEntry{Term: rf.currentTerm, Command: command})
-	for peer := 0; peer < len(rf.peers); peer++ {
-		if peer == rf.me {
-			continue
-		}
-
-		args := rf.createAppendEntriesArgs(rf.nextIndex[peer], rf.log[rf.nextIndex[peer]:len(rf.log)])
-		reply := AppendEntriesReply{}
-		go rf.sendAppendEntries(peer, &args, &reply)
-	}
-
-	return len(rf.log), rf.currentTerm, true
-}
-
 // the tester doesn't halt goroutines created by Raft after each test,
 // but it does call the Kill() method. your code can use killed() to
 // check whether Kill() has been called. the use of atomic avoids the
@@ -588,6 +551,46 @@ func (rf *Raft) createAppendEntriesArgs(nextIndex int, entries []LogEntry) Appen
 		Entries:      entries,
 		LeaderCommit: rf.commitIndex,
 	}
+}
+
+/************************************************************************
+ * Client Management
+ ***********************************************************************/
+
+// the service using Raft (e.g. a k/v server) wants to start
+// agreement on the next command to be appended to Raft's log. if this
+// server isn't the leader, returns false. otherwise start the
+// agreement and return immediately. there is no guarantee that this
+// command will ever be committed to the Raft log, since the leader
+// may fail or lose an election. even if the Raft instance has been killed,
+// this function should return gracefully.
+//
+// the first return value is the index that the command will appear at
+// if it's ever committed. the second return value is the current
+// term. the third return value is true if this server believes it is
+// the leader.
+func (rf *Raft) Start(command interface{}) (int, int, bool) {
+	rf.mu.Lock()
+	defer rf.mu.Unlock()
+
+	Debug(rf.me, rf.currentTerm, dAppend, "Start a command len(rf.log)=%v", len(rf.log))
+
+	if rf.role != Leader {
+		return -1, rf.currentTerm, false
+	}
+
+	rf.log = append(rf.log, LogEntry{Term: rf.currentTerm, Command: command})
+	for peer := 0; peer < len(rf.peers); peer++ {
+		if peer == rf.me {
+			continue
+		}
+
+		args := rf.createAppendEntriesArgs(rf.nextIndex[peer], rf.log[rf.nextIndex[peer]:len(rf.log)])
+		reply := AppendEntriesReply{}
+		go rf.sendAppendEntries(peer, &args, &reply)
+	}
+
+	return len(rf.log), rf.currentTerm, true
 }
 
 /************************************************************************
