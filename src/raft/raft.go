@@ -51,6 +51,10 @@ const (
 	electionTimeoutMaxMs = 1700
 )
 
+const (
+	maxEntriesPerAppend = 300
+)
+
 // as each Raft peer becomes aware that successive log entries are
 // committed, the peer should send an ApplyMsg to the service (or
 // tester) on the same server, via the applyCh passed to Make(). set
@@ -444,7 +448,7 @@ func (rf *Raft) sendHeartbeats() {
 			continue
 		}
 
-		args := rf.createAppendEntriesArgs(rf.nextIndex[peer], make([]LogEntry, 0))
+		args := rf.createAppendEntriesArgs(peer, 0)
 		reply := AppendEntriesReply{}
 		go rf.sendAppendEntries(peer, &args, &reply)
 	}
@@ -568,17 +572,21 @@ func (rf *Raft) advanceCommitIndex(commitIndex int) {
 	rf.applyManagerCh <- true
 }
 
-func (rf *Raft) createAppendEntriesArgs(nextIndex int, entries []LogEntry) AppendEntriesArgs {
-	if nextIndex > len(rf.log) {
-		Fatal(rf.me, rf.currentTerm, "unexpected: nextIndex (%v) > len(rf.log) (%v).", nextIndex, len(rf.log))
+func (rf *Raft) createAppendEntriesArgs(peer int, maxEntries int) AppendEntriesArgs {
+	// Entries range is [leftIndex, rightIndex)
+	leftIndex := rf.nextIndex[peer]
+	rightIndex := Min(leftIndex+maxEntries, len(rf.log))
+
+	if leftIndex > len(rf.log) {
+		Fatal(rf.me, rf.currentTerm, "unexpected: leftIndex (%v) > len(rf.log) (%v).", leftIndex, len(rf.log))
 	}
 
 	return AppendEntriesArgs{
 		Term:         rf.currentTerm,
 		LeaderId:     rf.me,
-		PrevLogIndex: nextIndex - 1,
-		PrevLogTerm:  rf.log[nextIndex-1].Term,
-		Entries:      entries,
+		PrevLogIndex: leftIndex - 1,
+		PrevLogTerm:  rf.log[leftIndex-1].Term,
+		Entries:      rf.log[leftIndex:rightIndex],
 		LeaderCommit: rf.commitIndex,
 	}
 }
@@ -615,7 +623,7 @@ func (rf *Raft) Start(command interface{}) (int, int, bool) {
 			continue
 		}
 
-		args := rf.createAppendEntriesArgs(rf.nextIndex[peer], rf.log[rf.nextIndex[peer]:len(rf.log)])
+		args := rf.createAppendEntriesArgs(peer, maxEntriesPerAppend)
 		reply := AppendEntriesReply{}
 		go rf.sendAppendEntries(peer, &args, &reply)
 	}
