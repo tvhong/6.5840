@@ -603,12 +603,19 @@ func (rf *Raft) runApplyManager() {
 		_, more := <-rf.applyManagerCh
 		if more {
 			rf.mu.Lock()
-			// Loop from commitIndex to len(rf.log)
-			// Send ApplyMsg
-			msg := ApplyMsg{CommandValid: true, Command: 5, CommandIndex: 7}
-			rf.applyCh <- msg
 
-			Debug(rf.me, rf.currentTerm, dLog, "Test")
+			if rf.lastApplied > rf.commitIndex {
+				Fatal(rf.me, rf.currentTerm, "rf.lastApplied > rf.commitIndex. rf.lastApplied=%v, rf.commitIndex=%v", rf.lastApplied, rf.commitIndex)
+			}
+
+			Debug(rf.me, rf.currentTerm, dAppend, "Sending ApplyMsg to client. rf.lastApplied=%v, rf.commitIndex=%v", rf.lastApplied, rf.commitIndex)
+			for i := rf.lastApplied; i <= rf.commitIndex; i++ {
+				msg := ApplyMsg{CommandValid: true, Command: rf.log[i].Command, CommandIndex: i}
+				rf.applyCh <- msg
+			}
+
+			rf.lastApplied = rf.commitIndex
+
 			rf.mu.Unlock()
 		}
 	}
