@@ -496,6 +496,33 @@ func (rf *Raft) becomeLeader() {
 	rf.sendHeartbeats()
 }
 
+func (rf *Raft) maybeDeleteConflictingEntries(args *AppendEntriesArgs) {
+	var hasConflict bool
+	var conflictIndex int
+	hasConflict, conflictIndex = rf.findConflictIndex(args)
+
+	if hasConflict {
+		rf.deleteConflictingEntries(conflictIndex)
+	}
+}
+
+func (rf *Raft) deleteConflictingEntries(conflictIndex int) {
+	if conflictIndex >= rf.commitIndex {
+		Fatal(rf.me, rf.currentTerm,
+			"There is a conflict at or before the commitIndex. conflictIndex=%v rf.commitIndex=%v. This violates Leader Completeness property.",
+			conflictIndex,
+			rf.commitIndex)
+	}
+
+	if rf.role == Leader {
+		Fatal(rf.me, rf.currentTerm, "Leader is being asked to delete conflicting entries. This violates Leader Append-Only property.")
+	}
+
+	Debug(rf.me, rf.currentTerm, dRpc, "Delete conflicting logs from rf.log index %v onward.", conflictIndex)
+
+	rf.log = rf.log[:conflictIndex]
+}
+
 func (rf *Raft) findConflictIndex(args *AppendEntriesArgs) (bool, int) {
 	conflictIndex := -1
 	for i := 0; i < len(args.Entries); i++ {
@@ -519,33 +546,6 @@ func (rf *Raft) findConflictIndex(args *AppendEntriesArgs) (bool, int) {
 	}
 
 	return conflictIndex != -1, conflictIndex
-}
-
-func (rf *Raft) maybeDeleteConflictingEntries(args *AppendEntriesArgs) {
-	var hasConflict bool
-	var conflictIndex int
-	hasConflict, conflictIndex = rf.findConflictIndex(args)
-
-	if hasConflict {
-		rf.deleteConflictingEntries(conflictIndex)
-	}
-}
-
-func (rf *Raft) deleteConflictingEntries(conflictIndex int) {
-	if conflictIndex >= rf.commitIndex {
-		Fatal(rf.me, rf.currentTerm,
-			"There is a conflict at or before the commitIndex. conflictIndex=%v rf.commitIndex=%v. This violates Leader Completeness property.",
-			conflictIndex,
-			rf.commitIndex)
-	}
-
-	if rf.role == Leader {
-		Fatal(rf.me, rf.currentTerm, "Leader is being asked to delete conflicting entries. This violate Leader Append-Only property.")
-	}
-
-	Debug(rf.me, rf.currentTerm, dRpc, "Delete conflicting logs from rf.log index %v onward.", conflictIndex)
-
-	rf.log = rf.log[:conflictIndex]
 }
 
 func (rf *Raft) maybeAppendNewEntries(args *AppendEntriesArgs) {
