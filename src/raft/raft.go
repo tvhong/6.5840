@@ -84,7 +84,7 @@ type Raft struct {
 	// volatile
 	mu                  sync.Mutex // Lock to protect shared access to this peer's state
 	persister           *Persister // Object to hold this peer's persisted state
-	applyChannel        chan bool
+	applyManagerCh        chan bool
 	dead                int32 // set by Kill()
 	role                Role  // The role of this node
 	nextElectionTimeout time.Time
@@ -344,7 +344,7 @@ func (rf *Raft) sendAppendEntries(server int, args *AppendEntriesArgs, reply *Ap
 // should call killed() to check whether it should stop.
 func (rf *Raft) Kill() {
 	atomic.StoreInt32(&rf.dead, 1)
-	close(rf.applyChannel)
+	close(rf.applyManagerCh)
 }
 
 func (rf *Raft) killed() bool {
@@ -598,7 +598,7 @@ func (rf *Raft) Start(command interface{}) (int, int, bool) {
 
 func (rf *Raft) runApplyManager() {
 	for !rf.killed() {
-		_, more := <-rf.applyChannel
+		_, more := <-rf.applyManagerCh
 		if more {
 			rf.mu.Lock()
 			Debug(rf.me, rf.currentTerm, dLog, "Test")
@@ -628,7 +628,7 @@ func Make(
 	rf := &Raft{}
 	rf.peers = peers
 	rf.persister = persister
-	rf.applyChannel = make(chan bool)
+	rf.applyManagerCh = make(chan bool)
 	rf.me = me
 
 	rf.role = Follower
