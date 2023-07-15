@@ -324,46 +324,49 @@ func (rf *Raft) sendAppendEntries(server int, args *AppendEntriesArgs, reply *Ap
 	ok := rf.peers[server].Call("Raft.AppendEntries", args, reply)
 
 	rf.mu.Lock()
+	defer rf.mu.Unlock()
+
+	Debug(rf.me, rf.currentTerm, dRpc, "Handling appendEntries reply from S%v. Reply=%+v", server, reply)
+
 	advancedTerm := rf.maybeAdvanceTerm(reply.Term)
-	if !advancedTerm {
-		Debug(rf.me, rf.currentTerm, dRpc, "Handling appendEntries reply from S%v. Reply=%+v", server, reply)
+	if advancedTerm {
+		return ok
+	}
 
-		if reply.Success {
-			peerWrittenIndex := args.PrevLogIndex + len(args.Entries)
+	if reply.Success {
+		peerWrittenIndex := args.PrevLogIndex + len(args.Entries)
 
-			if peerWrittenIndex < rf.matchIndex[server] {
-				Fatal(rf.me, rf.currentTerm,
-					"Peer's written index (%v) is less than matchIndex[peer] (%v). This violates matchIndex must monotonically increas.",
-					peerWrittenIndex, rf.matchIndex[server])
-			}
-
-			rf.matchIndex[server] = peerWrittenIndex
-
-			rf.nextIndex[server] = peerWrittenIndex + 1
-
-			// TODO: count my own vote as yes
-
-			// If majority responded, commit
-			//   applyCh when majority vote received (increase lastApplied)
-			//   Increase commitIndex
-			//   Clean up tracking map once majority vote received
-			// Handle unknown logIndex (not found in tracking map or <commitIndex)
-		} else {
-			if args.PrevLogIndex == 0 {
-				Debug(rf.me, rf.currentTerm, dWarn, "Follower S%v rejected AppendEntries with PrevLogIndex=%v. Reply=%+v. Potential timeout.", server, args.PrevLogIndex, reply)
-			}
-
-			rf.nextIndex[server] = Max(args.PrevLogIndex/2, 1)
-
-			// TODO: retry
-			// retryArgs := rf.createAppendEntriesArgs(rf.nextIndex[server], rf.log[rf.nextIndex[server]:len(rf.log)])
-			// retryReply := AppendEntriesReply{}
-			// go rf.sendAppendEntries(server, &retryArgs, &retryReply)
+		if peerWrittenIndex < rf.matchIndex[server] {
+			Fatal(rf.me, rf.currentTerm,
+				"Peer's written index (%v) is less than matchIndex[peer] (%v). This violates matchIndex must monotonically increas.",
+				peerWrittenIndex, rf.matchIndex[server])
 		}
 
-		Debug(rf.me, rf.currentTerm, dRpc, "nextIndex[S%v]=%v", server, rf.nextIndex[server])
+		rf.matchIndex[server] = peerWrittenIndex
+
+		rf.nextIndex[server] = peerWrittenIndex + 1
+
+		// TODO: count my own vote as yes
+
+		// If majority responded, commit
+		//   applyCh when majority vote received (increase lastApplied)
+		//   Increase commitIndex
+		//   Clean up tracking map once majority vote received
+		// Handle unknown logIndex (not found in tracking map or <commitIndex)
+	} else {
+		if args.PrevLogIndex == 0 {
+			Debug(rf.me, rf.currentTerm, dWarn, "Follower S%v rejected AppendEntries with PrevLogIndex=%v. Reply=%+v. Potential timeout.", server, args.PrevLogIndex, reply)
+		}
+
+		rf.nextIndex[server] = Max(args.PrevLogIndex/2, 1)
+
+		// TODO: retry
+		// retryArgs := rf.createAppendEntriesArgs(rf.nextIndex[server], rf.log[rf.nextIndex[server]:len(rf.log)])
+		// retryReply := AppendEntriesReply{}
+		// go rf.sendAppendEntries(server, &retryArgs, &retryReply)
 	}
-	rf.mu.Unlock()
+
+	Debug(rf.me, rf.currentTerm, dRpc, "nextIndex[S%v]=%v", server, rf.nextIndex[server])
 
 	return ok
 }
