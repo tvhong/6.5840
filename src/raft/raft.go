@@ -543,7 +543,10 @@ func (rf *Raft) maybeAppendNewEntries(args *AppendEntriesArgs) {
 }
 
 func (rf *Raft) createAppendEntriesArgs(nextIndex int, entries []LogEntry) AppendEntriesArgs {
-	// TODO: assert nextIndex <= len(rf.log)
+	if nextIndex > len(rf.log) {
+		log.Fatalf("S%v: unexpected: nextIndex (%v) > len(rf.log) (%v).", rf.me, nextIndex, len(rf.log))
+	}
+
 	return AppendEntriesArgs{
 		Term:         rf.currentTerm,
 		LeaderId:     rf.me,
