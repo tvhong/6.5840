@@ -362,15 +362,7 @@ func (rf *Raft) Start(command interface{}) (int, int, bool) {
 			continue
 		}
 
-		nextIndex := rf.nextIndex[peer]
-		args := AppendEntriesArgs{
-			Term:         rf.currentTerm,
-			LeaderId:     rf.me,
-			PrevLogIndex: nextIndex - 1,
-			PrevLogTerm:  rf.log[nextIndex-1].Term,
-			Entries:      rf.log[nextIndex:len(rf.log)], // TODO: assert nextIndex <= len(rf.log)
-			LeaderCommit: rf.commitIndex,
-		}
+		args := rf.createAppendEntriesArgs(rf.nextIndex[peer], rf.log[rf.nextIndex[peer]:len(rf.log)])
 		reply := AppendEntriesReply{}
 		go rf.sendAppendEntries(peer, &args, &reply)
 	}
@@ -461,15 +453,7 @@ func (rf *Raft) sendHeartbeats() {
 			continue
 		}
 
-		nextIndex := rf.nextIndex[peer]
-		args := AppendEntriesArgs{
-			Term:         rf.currentTerm,
-			LeaderId:     rf.me,
-			PrevLogIndex: nextIndex - 1,
-			PrevLogTerm:  rf.log[nextIndex-1].Term,
-			Entries:      make([]LogEntry, 0),
-			LeaderCommit: rf.commitIndex,
-		}
+		args := rf.createAppendEntriesArgs(rf.nextIndex[peer], make([]LogEntry, 0))
 		reply := AppendEntriesReply{}
 		go rf.sendAppendEntries(peer, &args, &reply)
 	}
@@ -555,6 +539,18 @@ func (rf *Raft) maybeAppendNewEntries(args *AppendEntriesArgs) {
 
 		Debug(rf.me, rf.currentTerm, dRpc,
 			"Appending new entries from leader S%v. preAppendLength: %v, postApendLength: %v", args.LeaderId, preAppendLength, len(rf.log))
+	}
+}
+
+func (rf *Raft) createAppendEntriesArgs(nextIndex int, entries []LogEntry) AppendEntriesArgs {
+	// TODO: assert nextIndex <= len(rf.log)
+	return AppendEntriesArgs{
+		Term:         rf.currentTerm,
+		LeaderId:     rf.me,
+		PrevLogIndex: nextIndex - 1,
+		PrevLogTerm:  rf.log[nextIndex-1].Term,
+		Entries:      entries,
+		LeaderCommit: rf.commitIndex,
 	}
 }
 
