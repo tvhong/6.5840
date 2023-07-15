@@ -322,7 +322,17 @@ func (rf *Raft) sendAppendEntries(server int, args *AppendEntriesArgs, reply *Ap
 	rf.mu.Lock()
 	rf.maybeAdvanceTerm(reply.Term)
 
-	// TODO: create new data structure to track responses
+	if reply.Success {
+		peerWrittenIndex :=  args.PrevLogIndex + len(args.Entries)
+
+		if peerWrittenIndex < rf.matchIndex[server] {
+			Fatal(rf.me, rf.currentTerm,
+				"Peer's written index (%v) is less than matchIndex[peer] (%v). This violates matchIndex must monotonically increas.",
+				peerWrittenIndex, rf.matchIndex[server])
+		}
+
+		rf.matchIndex[server] = peerWrittenIndex
+	}
 	// TODO: count my own vote as yes
 
 	// If majority responded, commit
