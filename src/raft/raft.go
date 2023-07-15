@@ -315,18 +315,18 @@ func (rf *Raft) sendRequestVote(server int, args *RequestVoteArgs, reply *Reques
 	return ok
 }
 
-func (rf *Raft) sendAppendEntries(server int, args *AppendEntriesArgs, reply *AppendEntriesReply) bool {
+func (rf *Raft) sendAppendEntries(peer int, args *AppendEntriesArgs, reply *AppendEntriesReply) bool {
 
 	rf.mu.Lock()
-	Debug(rf.me, rf.currentTerm, dRpc, "Send appendEntries to server S%v. args=%+v", server, args)
+	Debug(rf.me, rf.currentTerm, dRpc, "Send appendEntries to peer S%v. args=%+v", peer, args)
 	rf.mu.Unlock()
 
-	ok := rf.peers[server].Call("Raft.AppendEntries", args, reply)
+	ok := rf.peers[peer].Call("Raft.AppendEntries", args, reply)
 
 	rf.mu.Lock()
 	defer rf.mu.Unlock()
 
-	Debug(rf.me, rf.currentTerm, dRpc, "Handling appendEntries reply from S%v. Reply=%+v", server, reply)
+	Debug(rf.me, rf.currentTerm, dRpc, "Handling appendEntries reply from S%v. Reply=%+v", peer, reply)
 
 	advancedTerm := rf.maybeAdvanceTerm(reply.Term)
 	if advancedTerm {
@@ -336,30 +336,30 @@ func (rf *Raft) sendAppendEntries(server int, args *AppendEntriesArgs, reply *Ap
 	if reply.Success {
 		peerWrittenIndex := args.PrevLogIndex + len(args.Entries)
 
-		if peerWrittenIndex < rf.matchIndex[server] {
+		if peerWrittenIndex < rf.matchIndex[peer] {
 			Fatal(rf.me, rf.currentTerm,
 				"Peer's written index (%v) is less than matchIndex[peer] (%v). This violates matchIndex must monotonically increas.",
-				peerWrittenIndex, rf.matchIndex[server])
+				peerWrittenIndex, rf.matchIndex[peer])
 		}
 
-		rf.matchIndex[server] = peerWrittenIndex
-		rf.maybeLeaderAdvanceCommitIndex(rf.matchIndex[server])
+		rf.matchIndex[peer] = peerWrittenIndex
+		rf.maybeLeaderAdvanceCommitIndex(rf.matchIndex[peer])
 
-		rf.nextIndex[server] = peerWrittenIndex + 1
+		rf.nextIndex[peer] = peerWrittenIndex + 1
 	} else {
 		if args.PrevLogIndex == 0 {
-			Debug(rf.me, rf.currentTerm, dWarn, "Follower S%v rejected AppendEntries with PrevLogIndex=%v. Reply=%+v. Potential timeout.", server, args.PrevLogIndex, reply)
+			Debug(rf.me, rf.currentTerm, dWarn, "Follower S%v rejected AppendEntries with PrevLogIndex=%v. Reply=%+v. Potential timeout.", peer, args.PrevLogIndex, reply)
 		}
 
-		rf.nextIndex[server] = Max(args.PrevLogIndex/2, 1)
+		rf.nextIndex[peer] = Max(args.PrevLogIndex/2, 1)
 
 		// TODO: retry
-		// retryArgs := rf.createAppendEntriesArgs(rf.nextIndex[server], rf.log[rf.nextIndex[server]:len(rf.log)])
+		// retryArgs := rf.createAppendEntriesArgs(rf.nextIndex[peer], rf.log[rf.nextIndex[peer]:len(rf.log)])
 		// retryReply := AppendEntriesReply{}
-		// go rf.sendAppendEntries(server, &retryArgs, &retryReply)
+		// go rf.sendAppendEntries(peer, &retryArgs, &retryReply)
 	}
 
-	Debug(rf.me, rf.currentTerm, dRpc, "nextIndex[S%v]=%v", server, rf.nextIndex[server])
+	Debug(rf.me, rf.currentTerm, dRpc, "nextIndex[S%v]=%v", peer, rf.nextIndex[peer])
 
 	return ok
 }
