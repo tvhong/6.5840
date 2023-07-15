@@ -348,7 +348,7 @@ func (rf *Raft) sendAppendEntries(server int, args *AppendEntriesArgs, reply *Ap
 			// Handle unknown logIndex (not found in tracking map or <commitIndex)
 		} else {
 			if args.PrevLogIndex == 0 {
-				Fatal(rf.me, rf.currentTerm, "Follower S%s rejected AppendEntries with PrevLogIndex=%v. Reply=%v", server, args.PrevLogIndex, reply)
+				Debug(rf.me, rf.currentTerm, dWarn, "Follower S%v rejected AppendEntries with PrevLogIndex=%v. Reply=%v. Potential timeout.", server, args.PrevLogIndex, reply)
 			}
 
 			rf.nextIndex[server] = args.PrevLogIndex / 2
