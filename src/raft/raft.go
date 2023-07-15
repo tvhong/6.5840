@@ -19,7 +19,7 @@ package raft
 
 import (
 	//	"bytes"
-	"log"
+
 	"math/rand"
 	"sync"
 	"sync/atomic"
@@ -235,6 +235,8 @@ func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply
 		rf.maybeDeleteConflictingEntries(hasConflict, conflictIndex)
 		rf.maybeAppendNewEntries(args)
 
+		// TODO: maybe commit
+
 		Debug(rf.me, rf.currentTerm, dRpc, "Accept AppendEntries from S%v", args.LeaderId)
 		reply.Success = true
 	}
@@ -290,7 +292,8 @@ func (rf *Raft) sendRequestVote(server int, args *RequestVoteArgs, reply *Reques
 
 		if reply.VoteGranted {
 			if advancedTerm {
-				log.Fatalf("S%v shouldn't have voted for S%v if it has higher term, currentTerm: %v, reply: %v", server, rf.me, rf.currentTerm, reply)
+				Fatal(rf.me, rf.currentTerm,
+					"S%v shouldn't have voted for me if it has higher term, reply: %v", server, reply)
 			}
 
 			rf.votesReceived[server] = member
@@ -477,7 +480,7 @@ func (rf *Raft) maybeAdvanceTerm(term int) bool {
 
 func (rf *Raft) advanceTerm(term int) {
 	if term <= rf.currentTerm {
-		log.Fatalf("Updating currentTerm %v with a smaller or equal value: %v", rf.currentTerm, term)
+		Fatal(rf.me, rf.currentTerm, "Updating currentTerm %v with a smaller or equal value: %v", rf.currentTerm, term)
 	}
 
 	rf.currentTerm = term
@@ -544,7 +547,7 @@ func (rf *Raft) maybeAppendNewEntries(args *AppendEntriesArgs) {
 
 func (rf *Raft) createAppendEntriesArgs(nextIndex int, entries []LogEntry) AppendEntriesArgs {
 	if nextIndex > len(rf.log) {
-		log.Fatalf("S%v: unexpected: nextIndex (%v) > len(rf.log) (%v).", rf.me, nextIndex, len(rf.log))
+		Fatal(rf.me, rf.currentTerm, "unexpected: nextIndex (%v) > len(rf.log) (%v).", nextIndex, len(rf.log))
 	}
 
 	return AppendEntriesArgs{

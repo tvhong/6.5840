@@ -35,8 +35,8 @@ func Debug(server int, currentTerm int, topic logTopic, format string, a ...inte
 	}
 }
 
-func Fatal(server int, currentTerm int, topic logTopic, format string, a ...interface{}) {
-	writeLog(log.Fatalf, server, currentTerm, topic, format, a)
+func Fatal(server int, currentTerm int, format string, a ...interface{}) {
+	writeLog(log.Fatalf, server, currentTerm, dLog, format, a)
 }
 
 func writeLog(
