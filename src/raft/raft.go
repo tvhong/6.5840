@@ -527,18 +527,25 @@ func (rf *Raft) maybeDeleteConflictingEntries(args *AppendEntriesArgs) {
 	hasConflict, conflictIndex = rf.findConflictIndex(args)
 
 	if hasConflict {
-		if conflictIndex >= rf.commitIndex {
-			Fatal(rf.me, rf.currentTerm, "There is a conflict (conflictIndex: %v) at or before commitIndex (%v). This violates Leader Completeness property.")
-		}
-
-		if rf.role == Leader {
-			Fatal(rf.me, rf.currentTerm, "Leader is deleting conflicting entries. This violate Leader Append-Only property.")
-		}
-
-		Debug(rf.me, rf.currentTerm, dRpc, "Delete conflicting logs from rf.log index %v onward.", conflictIndex)
-
-		rf.log = rf.log[:conflictIndex]
+		rf.deleteConflictingEntries(conflictIndex)
 	}
+}
+
+func (rf *Raft) deleteConflictingEntries(conflictIndex int) {
+	if conflictIndex >= rf.commitIndex {
+		Fatal(rf.me, rf.currentTerm,
+			"There is a conflict at or before the commitIndex. conflictIndex=%v rf.commitIndex=%v. This violates Leader Completeness property.",
+			conflictIndex,
+			rf.commitIndex)
+	}
+
+	if rf.role == Leader {
+		Fatal(rf.me, rf.currentTerm, "Leader is being asked to delete conflicting entries. This violate Leader Append-Only property.")
+	}
+
+	Debug(rf.me, rf.currentTerm, dRpc, "Delete conflicting logs from rf.log index %v onward.", conflictIndex)
+
+	rf.log = rf.log[:conflictIndex]
 }
 
 func (rf *Raft) maybeAppendNewEntries(args *AppendEntriesArgs) {
