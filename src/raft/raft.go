@@ -234,8 +234,7 @@ func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply
 
 		rf.maybeDeleteConflictingEntries(hasConflict, conflictIndex)
 		rf.maybeAppendNewEntries(args)
-
-		// TODO: maybe commit
+		rf.maybeUpdateCommitIndex(args)
 
 		Debug(rf.me, rf.currentTerm, dRpc, "Accept AppendEntries from S%v", args.LeaderId)
 		reply.Success = true
@@ -550,6 +549,17 @@ func (rf *Raft) maybeAppendNewEntries(args *AppendEntriesArgs) {
 
 		Debug(rf.me, rf.currentTerm, dRpc,
 			"Appending new entries from leader S%v. preAppendLength: %v, postApendLength: %v", args.LeaderId, preAppendLength, len(rf.log))
+	}
+}
+
+func (rf *Raft) maybeUpdateCommitIndex(args *AppendEntriesArgs) {
+	if rf.commitIndex >= len(rf.log) {
+		Fatal(rf.me, rf.currentTerm, "commitIndex (%v) is higher than len(rf.log) (%v)", rf.commitIndex, (rf.log))
+	}
+
+	if args.LeaderCommit > rf.commitIndex {
+		rf.commitIndex = Min(args.LeaderCommit, len(rf.log)-1)
+		// TODO: call applyCh
 	}
 }
 
