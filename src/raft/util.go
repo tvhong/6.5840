@@ -31,12 +31,26 @@ var debugVerbosity int
 
 func Debug(server int, currentTerm int, topic logTopic, format string, a ...interface{}) {
 	if debugVerbosity >= 1 {
-		time := time.Since(debugStart).Microseconds()
-		time /= 100
-		prefix := fmt.Sprintf("%06d %v S%v t%v ", time, string(topic), server, currentTerm)
-		format = prefix + format
-		log.Printf(format, a...)
+		writeLog(log.Printf, server, currentTerm, topic, format, a)
 	}
+}
+
+func Fatal(server int, currentTerm int, topic logTopic, format string, a ...interface{}) {
+	writeLog(log.Fatalf, server, currentTerm, topic, format, a)
+}
+
+func writeLog(
+	logFn func(format string, a ...interface{}),
+	server int,
+	currentTerm int,
+	topic logTopic,
+	format string,
+	a ...interface{}) {
+	time := time.Since(debugStart).Microseconds()
+	time /= 100
+	prefix := fmt.Sprintf("%06d %v S%v t%v ", time, string(topic), server, currentTerm)
+	format = prefix + format
+	logFn(format, a...)
 }
 
 func Random(min int, max int) int {
