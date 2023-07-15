@@ -318,7 +318,7 @@ func (rf *Raft) sendRequestVote(server int, args *RequestVoteArgs, reply *Reques
 func (rf *Raft) sendAppendEntries(server int, args *AppendEntriesArgs, reply *AppendEntriesReply) bool {
 
 	rf.mu.Lock()
-	Debug(rf.me, rf.currentTerm, dRpc, "Send appendEntries to server S%v", server)
+	Debug(rf.me, rf.currentTerm, dRpc, "Send appendEntries to server S%v. args=%+v", server, args)
 	rf.mu.Unlock()
 
 	ok := rf.peers[server].Call("Raft.AppendEntries", args, reply)
@@ -326,6 +326,8 @@ func (rf *Raft) sendAppendEntries(server int, args *AppendEntriesArgs, reply *Ap
 	rf.mu.Lock()
 	advancedTerm := rf.maybeAdvanceTerm(reply.Term)
 	if !advancedTerm {
+		Debug(rf.me, rf.currentTerm, dRpc, "Handling appendEntries reply from S%v. Reply=%+v", server, reply)
+
 		if reply.Success {
 			peerWrittenIndex := args.PrevLogIndex + len(args.Entries)
 
@@ -348,7 +350,7 @@ func (rf *Raft) sendAppendEntries(server int, args *AppendEntriesArgs, reply *Ap
 			// Handle unknown logIndex (not found in tracking map or <commitIndex)
 		} else {
 			if args.PrevLogIndex == 0 {
-				Debug(rf.me, rf.currentTerm, dWarn, "Follower S%v rejected AppendEntries with PrevLogIndex=%v. Reply=%v. Potential timeout.", server, args.PrevLogIndex, reply)
+				Debug(rf.me, rf.currentTerm, dWarn, "Follower S%v rejected AppendEntries with PrevLogIndex=%v. Reply=%+v. Potential timeout.", server, args.PrevLogIndex, reply)
 			}
 
 			rf.nextIndex[server] = args.PrevLogIndex / 2
