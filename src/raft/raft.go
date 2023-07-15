@@ -343,7 +343,10 @@ func (rf *Raft) sendAppendEntries(peer int, args *AppendEntriesArgs, reply *Appe
 		}
 
 		rf.matchIndex[peer] = peerWrittenIndex
-		rf.commitIfMajorityMatches(rf.matchIndex[peer])
+
+		if rf.matchIndex[peer] > rf.commitIndex {
+			rf.commitIfMajorityMatches(rf.matchIndex[peer])
+		}
 
 		rf.nextIndex[peer] = peerWrittenIndex + 1
 	} else {
@@ -572,12 +575,6 @@ func (rf *Raft) commitIfMajorityMatches(matchIndex int) {
 	if matchIndex > len(rf.log) {
 		Fatal(rf.me, rf.currentTerm,
 			"Follower's matchIndex cannot be higher than the leader's index. matchIndex=%v, len(rf.log)=%v", matchIndex, len(rf.log))
-	}
-
-	if rf.commitIndex >= matchIndex {
-		Debug(rf.me, rf.currentTerm, dRpc,
-			"Skip updating leader commit index as commitIndex >= matchIndex (%v).", matchIndex, rf.commitIndex)
-		return
 	}
 
 	peersWithMatchIndex := 0
