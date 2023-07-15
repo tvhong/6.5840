@@ -603,6 +603,11 @@ func (rf *Raft) runApplyManager() {
 		_, more := <-rf.applyManagerCh
 		if more {
 			rf.mu.Lock()
+			// Loop from commitIndex to len(rf.log)
+			// Send ApplyMsg
+			msg := ApplyMsg{CommandValid: true, Command: 5, CommandIndex: 7}
+			rf.applyCh <- msg
+
 			Debug(rf.me, rf.currentTerm, dLog, "Test")
 			rf.mu.Unlock()
 		}
