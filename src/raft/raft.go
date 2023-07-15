@@ -578,7 +578,7 @@ func (rf *Raft) Start(command interface{}) (int, int, bool) {
 	rf.mu.Lock()
 	defer rf.mu.Unlock()
 
-	Debug(rf.me, rf.currentTerm, dAppend, "Start a command len(rf.log)=%v", len(rf.log))
+	Debug(rf.me, rf.currentTerm, dClient, "Start a command len(rf.log)=%v", len(rf.log))
 
 	if rf.role != Leader {
 		return -1, rf.currentTerm, false
@@ -608,7 +608,7 @@ func (rf *Raft) runApplyManager() {
 				Fatal(rf.me, rf.currentTerm, "rf.lastApplied > rf.commitIndex. rf.lastApplied=%v, rf.commitIndex=%v", rf.lastApplied, rf.commitIndex)
 			}
 
-			Debug(rf.me, rf.currentTerm, dAppend, "Sending ApplyMsg to client. rf.lastApplied=%v, rf.commitIndex=%v", rf.lastApplied, rf.commitIndex)
+			Debug(rf.me, rf.currentTerm, dClient, "Applying messages to client. rf.lastApplied=%v, rf.commitIndex=%v", rf.lastApplied, rf.commitIndex)
 			for i := rf.lastApplied; i <= rf.commitIndex; i++ {
 				msg := ApplyMsg{CommandValid: true, Command: rf.log[i].Command, CommandIndex: i}
 				rf.applyCh <- msg

@@ -23,7 +23,7 @@ const (
 	dTimer  logTopic = "TIMR"
 	dVote   logTopic = "VOTE"
 	dState  logTopic = "STAT" // state change
-	dAppend logTopic = "APPD" // appending command
+	dClient logTopic = "CLNT" // client interactions
 )
 
 var debugStart time.Time
