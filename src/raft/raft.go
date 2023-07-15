@@ -320,27 +320,27 @@ func (rf *Raft) sendAppendEntries(server int, args *AppendEntriesArgs, reply *Ap
 	ok := rf.peers[server].Call("Raft.AppendEntries", args, reply)
 
 	rf.mu.Lock()
-	rf.maybeAdvanceTerm(reply.Term)
-	// TODO: if advanced term, then don't process anything
+	advancedTerm := rf.maybeAdvanceTerm(reply.Term)
+	if !advancedTerm {
+		if reply.Success {
+			peerWrittenIndex := args.PrevLogIndex + len(args.Entries)
 
-	if reply.Success {
-		peerWrittenIndex := args.PrevLogIndex + len(args.Entries)
+			if peerWrittenIndex < rf.matchIndex[server] {
+				Fatal(rf.me, rf.currentTerm,
+					"Peer's written index (%v) is less than matchIndex[peer] (%v). This violates matchIndex must monotonically increas.",
+					peerWrittenIndex, rf.matchIndex[server])
+			}
 
-		if peerWrittenIndex < rf.matchIndex[server] {
-			Fatal(rf.me, rf.currentTerm,
-				"Peer's written index (%v) is less than matchIndex[peer] (%v). This violates matchIndex must monotonically increas.",
-				peerWrittenIndex, rf.matchIndex[server])
+			rf.matchIndex[server] = peerWrittenIndex
+
+			rf.nextIndex[server] = peerWrittenIndex + 1
+		} else {
+			if args.PrevLogIndex == 0 {
+				Fatal(rf.me, rf.currentTerm, "Follower S%s rejected AppendEntries with PrevLogIndex=%v. Reply=%v", server, args.PrevLogIndex, reply)
+			}
+
+			rf.nextIndex[server] = args.PrevLogIndex / 2
 		}
-
-		rf.matchIndex[server] = peerWrittenIndex
-
-		rf.nextIndex[server] = peerWrittenIndex + 1
-	} else {
-		if args.PrevLogIndex == 0 {
-			Fatal(rf.me, rf.currentTerm, "Follower S%s rejected AppendEntries with PrevLogIndex=%v. Reply=%v", server, args.PrevLogIndex, reply)
-		}
-
-		rf.nextIndex[server] = args.PrevLogIndex / 2
 	}
 	// TODO: count my own vote as yes
 
