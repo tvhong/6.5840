@@ -344,6 +344,7 @@ func (rf *Raft) sendAppendEntries(server int, args *AppendEntriesArgs, reply *Ap
 // should call killed() to check whether it should stop.
 func (rf *Raft) Kill() {
 	atomic.StoreInt32(&rf.dead, 1)
+	close(rf.applyChannel)
 }
 
 func (rf *Raft) killed() bool {
@@ -597,10 +598,8 @@ func (rf *Raft) Start(command interface{}) (int, int, bool) {
 
 func (rf *Raft) runApplyManager() {
 	for !rf.killed() {
-		// How to exit while waiting for message when node is killed
-		// TODO: when kill(), send a message to wake this up
-		hasChanges := <-rf.applyChannel
-		if hasChanges {
+		_, more := <-rf.applyChannel
+		if more {
 			rf.mu.Lock()
 			Debug(rf.me, rf.currentTerm, dLog, "Test")
 			rf.mu.Unlock()
