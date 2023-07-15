@@ -343,7 +343,7 @@ func (rf *Raft) sendAppendEntries(peer int, args *AppendEntriesArgs, reply *Appe
 		}
 
 		rf.matchIndex[peer] = peerWrittenIndex
-		rf.maybeLeaderAdvanceCommitIndex(rf.matchIndex[peer])
+		rf.commitIfMajorityMatches(rf.matchIndex[peer])
 
 		rf.nextIndex[peer] = peerWrittenIndex + 1
 	} else {
@@ -563,7 +563,7 @@ func (rf *Raft) maybeAdvanceCommitIndex(args *AppendEntriesArgs) {
 	}
 }
 
-func (rf *Raft) maybeLeaderAdvanceCommitIndex(matchIndex int) {
+func (rf *Raft) commitIfMajorityMatches(matchIndex int) {
 	if rf.role != Leader {
 		Fatal(rf.me, rf.currentTerm,
 			"Only the leader can commit indices. rf.role=%v, matchIndex=%v", rf.role, matchIndex)
