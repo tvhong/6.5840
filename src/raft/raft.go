@@ -353,13 +353,15 @@ func (rf *Raft) sendAppendEntries(server int, args *AppendEntriesArgs, reply *Ap
 				Debug(rf.me, rf.currentTerm, dWarn, "Follower S%v rejected AppendEntries with PrevLogIndex=%v. Reply=%+v. Potential timeout.", server, args.PrevLogIndex, reply)
 			}
 
-			rf.nextIndex[server] = args.PrevLogIndex / 2
+			rf.nextIndex[server] = Max(args.PrevLogIndex/2, 1)
 
 			// TODO: retry
 			// retryArgs := rf.createAppendEntriesArgs(rf.nextIndex[server], rf.log[rf.nextIndex[server]:len(rf.log)])
 			// retryReply := AppendEntriesReply{}
 			// go rf.sendAppendEntries(server, &retryArgs, &retryReply)
 		}
+
+		Debug(rf.me, rf.currentTerm, dRpc, "nextIndex[S%v]=%v", server, rf.nextIndex[server])
 	}
 	rf.mu.Unlock()
 
