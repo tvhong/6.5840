@@ -463,8 +463,8 @@ func (rf *Raft) sendHeartbeats() {
 }
 
 func (rf *Raft) maybeAdvanceTerm(term int) bool {
-	advance := term > rf.currentTerm
-	if advance {
+	shouldAdvance := term > rf.currentTerm
+	if shouldAdvance {
 		Debug(rf.me, rf.currentTerm, dState, "Receive newer term %v > %v. Converting to Follower.", term, rf.currentTerm)
 		rf.advanceTerm(term)
 		prevRole := rf.role
@@ -475,7 +475,7 @@ func (rf *Raft) maybeAdvanceTerm(term int) bool {
 		}
 	}
 
-	return advance
+	return shouldAdvance
 }
 
 func (rf *Raft) advanceTerm(term int) {
