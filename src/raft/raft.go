@@ -84,9 +84,8 @@ type Raft struct {
 	// volatile
 	mu                  sync.Mutex // Lock to protect shared access to this peer's state
 	persister           *Persister // Object to hold this peer's persisted state
-	applyManagerCh        chan bool
-	dead                int32 // set by Kill()
-	role                Role  // The role of this node
+	dead                int32      // set by Kill()
+	role                Role       // The role of this node
 	nextElectionTimeout time.Time
 	votesReceived       map[int]void // Set containing the votes received, elements are server ids
 
@@ -95,6 +94,9 @@ type Raft struct {
 
 	nextIndex  []int
 	matchIndex []int
+
+	applyManagerCh chan bool
+	applyCh        chan ApplyMsg
 }
 
 type LogEntry struct {
@@ -628,7 +630,10 @@ func Make(
 	rf := &Raft{}
 	rf.peers = peers
 	rf.persister = persister
+
+	rf.applyCh = applyCh
 	rf.applyManagerCh = make(chan bool)
+
 	rf.me = me
 
 	rf.role = Follower
