@@ -84,8 +84,9 @@ type Raft struct {
 	// volatile
 	mu                  sync.Mutex // Lock to protect shared access to this peer's state
 	persister           *Persister // Object to hold this peer's persisted state
-	dead                int32      // set by Kill()
-	role                Role       // The role of this node
+	applyChannel        chan bool
+	dead                int32 // set by Kill()
+	role                Role  // The role of this node
 	nextElectionTimeout time.Time
 	votesReceived       map[int]void // Set containing the votes received, elements are server ids
 
@@ -331,6 +332,7 @@ func (rf *Raft) sendAppendEntries(server int, args *AppendEntriesArgs, reply *Ap
 
 	return ok
 }
+
 // the tester doesn't halt goroutines created by Raft after each test,
 // but it does call the Kill() method. your code can use killed() to
 // check whether Kill() has been called. the use of atomic avoids the
@@ -593,6 +595,19 @@ func (rf *Raft) Start(command interface{}) (int, int, bool) {
 	return len(rf.log), rf.currentTerm, true
 }
 
+func (rf *Raft) runApplyManager() {
+	for !rf.killed() {
+		// How to exit while waiting for message when node is killed
+		// TODO: when kill(), send a message to wake this up
+		hasChanges := <-rf.applyChannel
+		if hasChanges {
+			rf.mu.Lock()
+			Debug(rf.me, rf.currentTerm, dLog, "Test")
+			rf.mu.Unlock()
+		}
+	}
+}
+
 /************************************************************************
  * Factory
  ***********************************************************************/
@@ -614,6 +629,7 @@ func Make(
 	rf := &Raft{}
 	rf.peers = peers
 	rf.persister = persister
+	rf.applyChannel = make(chan bool)
 	rf.me = me
 
 	rf.role = Follower
@@ -634,6 +650,8 @@ func Make(
 	rf.readPersist(persister.ReadRaftState())
 
 	Debug(rf.me, rf.currentTerm, dLog, "Hello World!")
+
+	go rf.runApplyManager()
 	// start ticker goroutine to start elections
 	go rf.ticker()
 
