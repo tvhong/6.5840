@@ -334,21 +334,27 @@ func (rf *Raft) sendAppendEntries(server int, args *AppendEntriesArgs, reply *Ap
 			rf.matchIndex[server] = peerWrittenIndex
 
 			rf.nextIndex[server] = peerWrittenIndex + 1
+
+			// TODO: count my own vote as yes
+
+			// If majority responded, commit
+			//   applyCh when majority vote received (increase lastApplied)
+			//   Increase commitIndex
+			//   Clean up tracking map once majority vote received
+			// Handle unknown logIndex (not found in tracking map or <commitIndex)
 		} else {
 			if args.PrevLogIndex == 0 {
 				Fatal(rf.me, rf.currentTerm, "Follower S%s rejected AppendEntries with PrevLogIndex=%v. Reply=%v", server, args.PrevLogIndex, reply)
 			}
 
 			rf.nextIndex[server] = args.PrevLogIndex / 2
+
+			// TODO: retry
+			// retryArgs := rf.createAppendEntriesArgs(rf.nextIndex[server], rf.log[rf.nextIndex[server]:len(rf.log)])
+			// retryReply := AppendEntriesReply{}
+			// go rf.sendAppendEntries(server, &retryArgs, &retryReply)
 		}
 	}
-	// TODO: count my own vote as yes
-
-	// If majority responded, commit
-	//   applyCh when majority vote received (increase lastApplied)
-	//   Increase commitIndex
-	//   Clean up tracking map once majority vote received
-	// Handle unknown logIndex (not found in tracking map or <commitIndex)
 	rf.mu.Unlock()
 
 	return ok
