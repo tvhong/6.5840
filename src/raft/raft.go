@@ -343,16 +343,9 @@ func (rf *Raft) sendAppendEntries(server int, args *AppendEntriesArgs, reply *Ap
 		}
 
 		rf.matchIndex[server] = peerWrittenIndex
+		rf.maybeLeaderAdvanceCommitIndex(reply)
 
 		rf.nextIndex[server] = peerWrittenIndex + 1
-
-		// TODO: count my own vote as yes
-
-		// If majority responded, commit
-		//   applyCh when majority vote received (increase lastApplied)
-		//   Increase commitIndex
-		//   Clean up tracking map once majority vote received
-		// Handle unknown logIndex (not found in tracking map or <commitIndex)
 	} else {
 		if args.PrevLogIndex == 0 {
 			Debug(rf.me, rf.currentTerm, dWarn, "Follower S%v rejected AppendEntries with PrevLogIndex=%v. Reply=%+v. Potential timeout.", server, args.PrevLogIndex, reply)
@@ -568,6 +561,16 @@ func (rf *Raft) maybeAdvanceCommitIndex(args *AppendEntriesArgs) {
 	if commitIndex > rf.commitIndex {
 		rf.advanceCommitIndex(commitIndex)
 	}
+}
+
+func (rf *Raft) maybeLeaderAdvanceCommitIndex(reply *AppendEntriesReply) {
+	// TODO: count my own vote as yes
+
+	// If majority responded, commit
+	//   applyCh when majority vote received (increase lastApplied)
+	//   Increase commitIndex
+	//   Clean up tracking map once majority vote received
+	// Handle unknown logIndex (not found in tracking map or <commitIndex)
 }
 
 func (rf *Raft) advanceCommitIndex(commitIndex int) {
