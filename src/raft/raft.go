@@ -564,6 +564,11 @@ func (rf *Raft) maybeAdvanceCommitIndex(args *AppendEntriesArgs) {
 }
 
 func (rf *Raft) maybeLeaderAdvanceCommitIndex(matchIndex int) {
+	if rf.role != Leader {
+		Fatal(rf.me, rf.currentTerm,
+			"Only the leader can commit indices. rf.role=%v, matchIndex=%v", rf.role, matchIndex)
+	}
+
 	if matchIndex > len(rf.log) {
 		Fatal(rf.me, rf.currentTerm,
 			"Follower's matchIndex cannot be higher than the leader's index. matchIndex=%v, len(rf.log)=%v", matchIndex, len(rf.log))
