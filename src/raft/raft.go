@@ -343,7 +343,7 @@ func (rf *Raft) sendAppendEntries(server int, args *AppendEntriesArgs, reply *Ap
 		}
 
 		rf.matchIndex[server] = peerWrittenIndex
-		rf.maybeLeaderAdvanceCommitIndex(reply)
+		rf.maybeLeaderAdvanceCommitIndex(rf.matchIndex[server])
 
 		rf.nextIndex[server] = peerWrittenIndex + 1
 	} else {
@@ -563,20 +563,41 @@ func (rf *Raft) maybeAdvanceCommitIndex(args *AppendEntriesArgs) {
 	}
 }
 
-func (rf *Raft) maybeLeaderAdvanceCommitIndex(reply *AppendEntriesReply) {
-	// TODO: count my own vote as yes
+func (rf *Raft) maybeLeaderAdvanceCommitIndex(matchIndex int) {
+	if matchIndex > len(rf.log) {
+		Fatal(rf.me, rf.currentTerm,
+			"Follower's matchIndex cannot be higher than the leader's index. matchIndex=%v, len(rf.log)=%v", matchIndex, len(rf.log))
+	}
 
-	// If majority responded, commit
-	//   applyCh when majority vote received (increase lastApplied)
-	//   Increase commitIndex
-	//   Clean up tracking map once majority vote received
-	// Handle unknown logIndex (not found in tracking map or <commitIndex)
+	if rf.commitIndex >= matchIndex {
+		Debug(rf.me, rf.currentTerm, dRpc,
+			"Skip updating leader commit index as commitIndex >= matchIndex (%v).", matchIndex, rf.commitIndex)
+		return
+	}
+
+	peersWithMatchIndex := 0
+	for peer := 0; peer < len(rf.peers); peer++ {
+		if peer == rf.me {
+			continue
+		}
+
+		if rf.matchIndex[peer] >= matchIndex {
+			peersWithMatchIndex += 1
+		}
+	}
+
+	if peersWithMatchIndex+1 >= rf.getMajorityCount() {
+		Debug(rf.me, rf.currentTerm, dRpc, "Received majority matchIndex (%v), committing.", matchIndex)
+		rf.advanceCommitIndex(matchIndex)
+	}
 }
 
 func (rf *Raft) advanceCommitIndex(commitIndex int) {
 	if commitIndex <= rf.commitIndex {
 		Fatal(rf.me, rf.currentTerm, "Trying to decrease or equate commitIndex. rf.commitIndex=%v, commitIndex=%v", rf.commitIndex, commitIndex)
 	}
+
+	Debug(rf.me, rf.currentTerm, dRpc, "Advance commit index to %v", commitIndex)
 
 	rf.commitIndex = commitIndex
 	rf.applyManagerCh <- true
@@ -599,6 +620,10 @@ func (rf *Raft) createAppendEntriesArgs(peer int, maxEntries int) AppendEntriesA
 		Entries:      rf.log[leftIndex:rightIndex],
 		LeaderCommit: rf.commitIndex,
 	}
+}
+
+func (rf *Raft) getMajorityCount() int {
+	return len(rf.peers)/2 + 1
 }
 
 /************************************************************************
