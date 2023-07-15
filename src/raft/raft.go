@@ -230,7 +230,7 @@ func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply
 	} else {
 		rf.maybeDeleteConflictingEntries(args)
 		rf.maybeAppendNewEntries(args)
-		rf.maybeUpdateCommitIndex(args)
+		rf.maybeAdvanceCommitIndex(args)
 
 		Debug(rf.me, rf.currentTerm, dRpc, "Accept AppendEntries from S%v", args.LeaderId)
 		reply.Success = true
@@ -552,15 +552,20 @@ func (rf *Raft) maybeAppendNewEntries(args *AppendEntriesArgs) {
 	}
 }
 
-func (rf *Raft) maybeUpdateCommitIndex(args *AppendEntriesArgs) {
-	if rf.commitIndex >= len(rf.log) {
-		Fatal(rf.me, rf.currentTerm, "commitIndex (%v) is higher than len(rf.log) (%v)", rf.commitIndex, (rf.log))
+func (rf *Raft) maybeAdvanceCommitIndex(args *AppendEntriesArgs) {
+	if args.LeaderCommit > rf.commitIndex {
+		commitIndex := Min(args.LeaderCommit, len(rf.log)-1)
+		rf.advanceCommitIndex(commitIndex)
+	}
+}
+
+func (rf *Raft) advanceCommitIndex(commitIndex int) {
+	if commitIndex < rf.commitIndex {
+		Fatal(rf.me, rf.currentTerm, "Trying to decrease commitIndex. rf.commitIndex=%v, commitIndex=%v", rf.commitIndex, commitIndex)
 	}
 
-	if args.LeaderCommit > rf.commitIndex {
-		rf.commitIndex = Min(args.LeaderCommit, len(rf.log)-1)
-		// TODO: call applyCh
-	}
+	rf.commitIndex = commitIndex
+	// TODO: call applyCh
 }
 
 func (rf *Raft) createAppendEntriesArgs(nextIndex int, entries []LogEntry) AppendEntriesArgs {
