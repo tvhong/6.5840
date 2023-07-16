@@ -781,9 +781,9 @@ func Make(
 
 	Debug(rf.me, rf.currentTerm, dLog, "Hello World!")
 
-	go rf.runApplyManager()
-	// start ticker goroutine to start elections
+	go rf.runHeartbeatTicker()
 	go rf.runLeaderTimeoutTicker()
+	go rf.runApplyManager()
 
 	return rf
 }
