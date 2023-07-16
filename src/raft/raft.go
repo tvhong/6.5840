@@ -286,7 +286,7 @@ func (rf *Raft) sendRequestVote(peer int, args *RequestVoteArgs, reply *RequestV
 	rf.mu.Lock()
 	defer rf.mu.Unlock()
 
-	Debug(rf.me, rf.currentTerm, dRpc, "Handling requestVote reply from S%v. Reply=%+v", peer, reply)
+	Debug(rf.me, rf.currentTerm, dVote, "Handling requestVote reply from S%v. Reply=%+v", peer, reply)
 
 	if rf.currentTerm != args.Term {
 		Debug(rf.me, rf.currentTerm, dVote, "Received RequestVote response from S%v for args.Term %v, but this node's term has changed", peer, args.Term)
@@ -520,7 +520,7 @@ func (rf *Raft) deleteConflictingEntries(conflictIndex int) {
 		Fatal(rf.me, rf.currentTerm, "Leader is being asked to delete conflicting entries. This violates Leader Append-Only property.")
 	}
 
-	Debug(rf.me, rf.currentTerm, dRpc, "Delete conflicting logs from rf.log index %v onward.", conflictIndex)
+	Debug(rf.me, rf.currentTerm, dHandle, "Delete conflicting logs from rf.log index %v onward.", conflictIndex)
 
 	rf.log = rf.log[:conflictIndex]
 }
@@ -536,7 +536,7 @@ func (rf *Raft) findConflictIndex(args *AppendEntriesArgs) (bool, int) {
 		if args.Entries[i] != rf.log[j] {
 			conflictIndex = j
 
-			Debug(rf.me, rf.currentTerm, dRpc,
+			Debug(rf.me, rf.currentTerm, dHandle,
 				"Found conflicting log at index %v. Entry in log: %v, entry in args: %v. Leader Id: %v",
 				conflictIndex,
 				rf.log[conflictIndex],
@@ -556,7 +556,7 @@ func (rf *Raft) maybeAppendNewEntries(args *AppendEntriesArgs) {
 		preAppendLength := len(rf.log)
 		rf.log = append(rf.log, args.Entries[newEntryIndex:]...)
 
-		Debug(rf.me, rf.currentTerm, dRpc,
+		Debug(rf.me, rf.currentTerm, dHandle,
 			"Appending new entries from leader S%v. preAppendLength: %v, postApendLength: %v", args.LeaderId, preAppendLength, len(rf.log))
 	}
 }
@@ -591,7 +591,7 @@ func (rf *Raft) commitIfMajorityMatches(matchIndex int) {
 	}
 
 	if peersWithMatchIndex+1 >= rf.getMajorityCount() {
-		Debug(rf.me, rf.currentTerm, dRpc, "Received majority matchIndex (%v), committing.", matchIndex)
+		Debug(rf.me, rf.currentTerm, dHandle, "Received majority matchIndex (%v), committing.", matchIndex)
 		rf.advanceCommitIndex(matchIndex)
 	}
 }
@@ -601,7 +601,7 @@ func (rf *Raft) advanceCommitIndex(commitIndex int) {
 		Fatal(rf.me, rf.currentTerm, "Trying to decrease or equate commitIndex. rf.commitIndex=%v, commitIndex=%v", rf.commitIndex, commitIndex)
 	}
 
-	Debug(rf.me, rf.currentTerm, dRpc, "Advance commit index to %v", commitIndex)
+	Debug(rf.me, rf.currentTerm, dHandle, "Advance commit index to %v", commitIndex)
 
 	rf.commitIndex = commitIndex
 	rf.applyManagerCh <- true
