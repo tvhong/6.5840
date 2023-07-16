@@ -278,11 +278,7 @@ func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply
 // the struct itself.
 func (rf *Raft) sendRequestVote(peer int, args *RequestVoteArgs, reply *RequestVoteReply) bool {
 	rf.mu.Lock()
-
 	Debug(rf.me, rf.currentTerm, dVote, "Request vote from peer S%v", peer)
-
-	initialTerm := rf.currentTerm
-
 	rf.mu.Unlock()
 
 	ok := rf.peers[peer].Call("Raft.RequestVote", args, reply)
@@ -292,8 +288,8 @@ func (rf *Raft) sendRequestVote(peer int, args *RequestVoteArgs, reply *RequestV
 
 	Debug(rf.me, rf.currentTerm, dRpc, "Handling requestVote reply from S%v. Reply=%+v", peer, reply)
 
-	if rf.currentTerm != initialTerm {
-		Debug(rf.me, rf.currentTerm, dVote, "Received RequestVote response from S%v for term %v, but this node's term has changed", peer, initialTerm)
+	if rf.currentTerm != args.Term {
+		Debug(rf.me, rf.currentTerm, dVote, "Received RequestVote response from S%v for args.Term %v, but this node's term has changed", peer, args.Term)
 		return ok
 	}
 
@@ -318,11 +314,8 @@ func (rf *Raft) sendRequestVote(peer int, args *RequestVoteArgs, reply *RequestV
 }
 
 func (rf *Raft) sendAppendEntries(peer int, args *AppendEntriesArgs, reply *AppendEntriesReply) bool {
-
 	rf.mu.Lock()
 	Debug(rf.me, rf.currentTerm, dRpc, "Send appendEntries to peer S%v. args=%+v", peer, args)
-
-	initialTerm := rf.currentTerm
 	rf.mu.Unlock()
 
 	ok := rf.peers[peer].Call("Raft.AppendEntries", args, reply)
@@ -332,8 +325,9 @@ func (rf *Raft) sendAppendEntries(peer int, args *AppendEntriesArgs, reply *Appe
 
 	Debug(rf.me, rf.currentTerm, dRpc, "Handling appendEntries reply from S%v. Reply=%+v", peer, reply)
 
-	if initialTerm != rf.currentTerm {
-		Debug(rf.me, rf.currentTerm, dVote, "Received AppendEntries response from S%v for term %v, but this node's term has changed", peer, initialTerm)
+	if args.Term != rf.currentTerm {
+		Debug(rf.me, rf.currentTerm, dRpc,
+			"Received AppendEntries response from S%v for args.Term %v, but this node's term has changed. Skip handling.", peer, args.Term)
 		return ok
 	}
 
@@ -359,8 +353,8 @@ func (rf *Raft) sendAppendEntries(peer int, args *AppendEntriesArgs, reply *Appe
 
 		rf.nextIndex[peer] = peerWrittenIndex + 1
 	} else {
-		if args.PrevLogIndex == 0 {
-			Debug(rf.me, rf.currentTerm, dWarn, "Follower S%v rejected AppendEntries with PrevLogIndex=%v. Reply=%+v. Potential timeout.", peer, args.PrevLogIndex, reply)
+		if args.PrevLogIndex == 0 && reply.Term != 0 {
+			Fatal(rf.me, rf.currentTerm, "Follower S%v rejected AppendEntries with PrevLogIndex=%v. Reply=%+v. Potential timeout.", peer, args.PrevLogIndex, reply)
 		}
 
 		rf.nextIndex[peer] = Max(args.PrevLogIndex/2, 1)
