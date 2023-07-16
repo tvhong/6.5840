@@ -96,6 +96,7 @@ type Raft struct {
 	role                Role       // The role of this node
 	nextElectionTimeout time.Time
 	votesReceived       map[int]void // Set containing the votes received, elements are server ids
+	heartbeatSent       map[int]void // Set containing the heartbeat sent, elements are server ids
 
 	commitIndex int
 	lastApplied int
@@ -394,6 +395,8 @@ func (rf *Raft) sendAppendEntries(peer int, args *AppendEntriesArgs, reply *Appe
 
 	Debug(rf.me, rf.currentTerm, dSend, "nextIndex[S%v]=%v", peer, rf.nextIndex[peer])
 
+	rf.heartbeatSent[peer] = member
+
 	return ok
 }
 
@@ -417,10 +420,17 @@ func (rf *Raft) sendHeartbeats() {
 			continue
 		}
 
+		if _, ok := rf.heartbeatSent[peer]; ok {
+			Debug(rf.me, rf.currentTerm, dTimer, "Skip sending heartbeat to S%v.", peer)
+			continue
+		}
+
 		args := rf.createAppendEntriesArgs(peer, 0)
 		reply := AppendEntriesReply{}
 		go rf.sendAppendEntries(peer, &args, &reply)
 	}
+
+	rf.heartbeatSent = make(map[int]void)
 }
 
 func (rf *Raft) maybeAdvanceTerm(term int) bool {
@@ -765,6 +775,7 @@ func Make(
 	rf.role = Follower
 	rf.currentTerm = 0
 	rf.votedFor = -1
+	rf.heartbeatSent = make(map[int]void)
 
 	rf.log = append(rf.log, LogEntry{Term: 0})
 	rf.commitIndex = 0
