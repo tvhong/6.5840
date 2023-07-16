@@ -577,7 +577,7 @@ func (rf *Raft) findConflictIndex(args *AppendEntriesArgs) (bool, int) {
 }
 
 func (rf *Raft) maybeAppendNewEntries(args *AppendEntriesArgs) {
-	newEntryIndex := len(rf.log) - args.PrevLogIndex
+	newEntryIndex := len(rf.log) - (args.PrevLogIndex + 1)
 	if newEntryIndex < len(args.Entries) {
 		preAppendLength := len(rf.log)
 		rf.log = append(rf.log, args.Entries[newEntryIndex:]...)
