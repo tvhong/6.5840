@@ -595,7 +595,7 @@ func (rf *Raft) maybeAppendNewEntries(args *AppendEntriesArgs) {
 }
 
 func (rf *Raft) maybeAdvanceCommitIndex(args *AppendEntriesArgs) {
-	commitIndex := Min(args.LeaderCommit, len(rf.log)-1)
+	commitIndex := Min(args.LeaderCommit, args.PrevLogIndex+len(args.Entries))
 	if commitIndex > rf.commitIndex {
 		rf.advanceCommitIndex(commitIndex)
 	}
