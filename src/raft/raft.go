@@ -418,7 +418,7 @@ func (rf *Raft) killed() bool {
 	return z == 1
 }
 
-func (rf *Raft) ticker() {
+func (rf *Raft) runLeaderTimeoutTicker() {
 	for !rf.killed() {
 		rf.mu.Lock()
 
@@ -774,7 +774,7 @@ func Make(
 
 	go rf.runApplyManager()
 	// start ticker goroutine to start elections
-	go rf.ticker()
+	go rf.runLeaderTimeoutTicker()
 
 	return rf
 }
