@@ -50,6 +50,8 @@ const (
 
 	electionTimeoutMinMs = 1300
 	electionTimeoutMaxMs = 1700
+
+	applyManagerIntervalMs = 500
 )
 
 const (
@@ -100,8 +102,7 @@ type Raft struct {
 	nextIndex  []int
 	matchIndex []int
 
-	applyManagerCh chan bool
-	applyCh        chan ApplyMsg
+	applyCh chan ApplyMsg
 }
 
 type LogEntry struct {
@@ -409,7 +410,6 @@ func (rf *Raft) Kill() {
 	rf.mu.Unlock()
 
 	atomic.StoreInt32(&rf.dead, 1)
-	close(rf.applyManagerCh)
 }
 
 func (rf *Raft) killed() bool {
@@ -643,8 +643,6 @@ func (rf *Raft) advanceCommitIndex(commitIndex int) {
 	Debug(rf.me, rf.currentTerm, dCommit, "Advance commit index to %v", commitIndex)
 
 	rf.commitIndex = commitIndex
-	// FIXME: this is synchronous call!!!
-	rf.applyManagerCh <- true
 }
 
 func (rf *Raft) createAppendEntriesArgs(peer int, maxEntries int) AppendEntriesArgs {
@@ -714,15 +712,11 @@ func (rf *Raft) Start(command interface{}) (int, int, bool) {
 
 func (rf *Raft) runApplyManager() {
 	for !rf.killed() {
-		ok := <-rf.applyManagerCh
-		Debug(rf.me, rf.currentTerm, dClient, "Manager waking up, ok=%v", ok)
-		if ok {
-			rf.mu.Lock()
+		rf.mu.Lock()
 
-			if rf.lastApplied > rf.commitIndex {
-				Fatal(rf.me, rf.currentTerm, "rf.lastApplied > rf.commitIndex. rf.lastApplied=%v, rf.commitIndex=%v", rf.lastApplied, rf.commitIndex)
-			}
-
+		if rf.lastApplied > rf.commitIndex {
+			Fatal(rf.me, rf.currentTerm, "rf.lastApplied > rf.commitIndex. rf.lastApplied=%v, rf.commitIndex=%v", rf.lastApplied, rf.commitIndex)
+		} else if rf.lastApplied < rf.commitIndex {
 			Debug(rf.me, rf.currentTerm, dClient, "Apply messages to client from rf.lastApplied=%v to rf.commitIndex=%v.", rf.lastApplied, rf.commitIndex)
 			for i := rf.lastApplied; i <= rf.commitIndex; i++ {
 				msg := ApplyMsg{CommandValid: true, Command: rf.log[i].Command, CommandIndex: i}
@@ -730,9 +724,11 @@ func (rf *Raft) runApplyManager() {
 			}
 
 			rf.lastApplied = rf.commitIndex
-
-			rf.mu.Unlock()
 		}
+
+		rf.mu.Unlock()
+
+		time.Sleep(time.Duration(applyManagerIntervalMs) * time.Millisecond)
 	}
 }
 
@@ -759,7 +755,6 @@ func Make(
 	rf.persister = persister
 
 	rf.applyCh = applyCh
-	rf.applyManagerCh = make(chan bool, 100)
 
 	rf.me = me
 
