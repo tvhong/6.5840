@@ -11,6 +11,7 @@ from rich.traceback import install
 
 # fmt: off
 # Mapping from topics to colors
+# See https://rich.readthedocs.io/en/stable/appendix/colors.html
 TOPICS = {
     "INFO": "bright_white",
     "WARN": "bright_yellow",
@@ -24,8 +25,8 @@ TOPICS = {
     "VOTE": "bright_cyan",
     "STAT": "yellow",
     "SEND": "bright_green",
-    "HNDL": "green",
-    "CLNT": "bright_cyan",
+    "HNDL": "aquamarine1",
+    "CLNT": "royal_blue1",
 
     "TERM": "green",
     "CMIT": "magenta",

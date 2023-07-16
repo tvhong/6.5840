@@ -225,7 +225,7 @@ func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply
 	rf.mu.Lock()
 	defer rf.mu.Unlock()
 
-	Debug(rf.me, rf.currentTerm, dHandle, "Receive AppendEntries from S%v, args: %v", args.LeaderId, args)
+	Debug(rf.me, rf.currentTerm, dHandle, "Receive AppendEntries from S%v, args: %+v", args.LeaderId, args)
 
 	rf.maybeAdvanceTerm(args.Term)
 	reply.Term = rf.currentTerm
@@ -256,7 +256,7 @@ func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply
 		rf.maybeAppendNewEntries(args)
 		rf.maybeAdvanceCommitIndex(args)
 
-		Debug(rf.me, rf.currentTerm, dHandle, "Accept AppendEntries from S%v", args.LeaderId)
+		Debug(rf.me, rf.currentTerm, dHandle, "Accept AppendEntries from S%v. args=%+v", args.LeaderId, args)
 		reply.Success = true
 	}
 
@@ -340,7 +340,7 @@ func (rf *Raft) sendAppendEntries(peer int, args *AppendEntriesArgs, reply *Appe
 	rf.mu.Lock()
 	defer rf.mu.Unlock()
 
-	Debug(rf.me, rf.currentTerm, dSend, "Handling appendEntries reply from S%v. Reply=%+v", peer, reply)
+	Debug(rf.me, rf.currentTerm, dSend, "Handling appendEntries reply from S%v. Args=%v, Reply=%+v", peer, args, reply)
 
 	if args.Term != rf.currentTerm {
 		Debug(rf.me, rf.currentTerm, dSend,
@@ -412,6 +412,10 @@ func (rf *Raft) ticker() {
 		Debug(rf.me, rf.currentTerm, dTimer, "Tick")
 
 		if rf.role == Leader {
+			// TODO: don't send heartbeat too often
+			// Separate heartbeat and electionTimeout.
+			// Reset heartbeat timer when send any message // or periodically
+			// Reset election timeout when handling any message
 			rf.sendHeartbeats()
 		} else {
 			if time.Now().After(rf.nextElectionTimeout) {
@@ -679,6 +683,7 @@ func (rf *Raft) Start(command interface{}) (int, int, bool) {
 		return -1, rf.currentTerm, false
 	}
 
+	Debug(rf.me, rf.currentTerm, dClient, "Start AppendEntries.")
 	rf.log = append(rf.log, LogEntry{Term: rf.currentTerm, Command: command})
 	for peer := 0; peer < len(rf.peers); peer++ {
 		if peer == rf.me {
@@ -703,7 +708,7 @@ func (rf *Raft) runApplyManager() {
 				Fatal(rf.me, rf.currentTerm, "rf.lastApplied > rf.commitIndex. rf.lastApplied=%v, rf.commitIndex=%v", rf.lastApplied, rf.commitIndex)
 			}
 
-			Debug(rf.me, rf.currentTerm, dClient, "Applying messages to client. rf.lastApplied=%v, rf.commitIndex=%v", rf.lastApplied, rf.commitIndex)
+			Debug(rf.me, rf.currentTerm, dClient, "Apply messages to client [rf.lastApplied=%v, rf.commitIndex=%v].", rf.lastApplied, rf.commitIndex)
 			for i := rf.lastApplied; i <= rf.commitIndex; i++ {
 				msg := ApplyMsg{CommandValid: true, Command: rf.log[i].Command, CommandIndex: i}
 				rf.applyCh <- msg
