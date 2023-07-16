@@ -202,8 +202,16 @@ func (rf *Raft) RequestVote(args *RequestVoteArgs, reply *RequestVoteReply) {
 	rf.maybeAdvanceTerm(args.Term)
 	reply.Term = rf.currentTerm
 
-	reply.VoteGranted = args.Term >= rf.currentTerm &&
-		(rf.votedFor == -1 || rf.votedFor == args.CandidateId)
+	candidateHasUpToDateTerm := args.Term >= rf.currentTerm
+	hasNotVoted := rf.votedFor == -1 || rf.votedFor == args.CandidateId
+
+	lastLogIndex := len(rf.log) - 1
+	lastLogTerm := rf.log[lastLogIndex].Term
+	candidateHasUpToDateLog := args.LastLogTerm > lastLogTerm ||
+		(args.LastLogTerm == lastLogTerm && args.LastLogIndex >= lastLogIndex)
+
+	reply.VoteGranted = candidateHasUpToDateTerm && hasNotVoted && candidateHasUpToDateLog
+
 	if reply.VoteGranted {
 		Debug(rf.me, rf.currentTerm, dVote, "Vote for S%v", args.CandidateId)
 		rf.votedFor = args.CandidateId
