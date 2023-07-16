@@ -404,6 +404,10 @@ func (rf *Raft) sendAppendEntries(peer int, args *AppendEntriesArgs, reply *Appe
 // confusing debug output. any goroutine with a long-running loop
 // should call killed() to check whether it should stop.
 func (rf *Raft) Kill() {
+	rf.mu.Lock()
+	Debug(rf.me, rf.currentTerm, dWarn, "Raft node is being killed.")
+	rf.mu.Unlock()
+
 	atomic.StoreInt32(&rf.dead, 1)
 	close(rf.applyManagerCh)
 }
