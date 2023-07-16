@@ -396,55 +396,6 @@ func (rf *Raft) sendAppendEntries(peer int, args *AppendEntriesArgs, reply *Appe
 	return ok
 }
 
-func (rf *Raft) runLeaderTimeoutTicker() {
-	for !rf.killed() {
-		rf.mu.Lock()
-
-		Debug(rf.me, rf.currentTerm, dTimer, "Tick")
-
-		if rf.role == Leader {
-			// TODO: don't send heartbeat too often
-			// Separate heartbeat and electionTimeout.
-			// Reset heartbeat timer when send any message // or periodically
-			// Reset election timeout when handling any message
-			rf.sendHeartbeats()
-		} else {
-			if time.Now().After(rf.nextElectionTimeout) {
-				Debug(rf.me, rf.currentTerm, dVote, "Election timeout!")
-				rf.role = Candidate
-				rf.advanceTerm(rf.currentTerm + 1)
-
-				rf.votedFor = rf.me
-				rf.votesReceived = make(map[int]void)
-				rf.votesReceived[rf.me] = member
-
-				rf.refreshElectionTimeout()
-
-				Debug(rf.me, rf.currentTerm, dVote, "Convert to Candidate with term %v", rf.currentTerm)
-
-				for peer := 0; peer < len(rf.peers); peer++ {
-					if peer == rf.me {
-						continue
-					}
-
-					args := RequestVoteArgs{
-						Term:         rf.currentTerm,
-						CandidateId:  rf.me,
-						LastLogIndex: len(rf.log) - 1,
-						LastLogTerm:  rf.log[len(rf.log)-1].Term,
-					}
-					reply := RequestVoteReply{}
-					go rf.sendRequestVote(peer, &args, &reply)
-				}
-			}
-		}
-		rf.mu.Unlock()
-
-		ms := 50 + (rand.Int63() % 300)
-		time.Sleep(time.Duration(ms) * time.Millisecond)
-	}
-}
-
 /************************************************************************
  * Helper methods
  ***********************************************************************/
@@ -724,6 +675,55 @@ func (rf *Raft) runApplyManager() {
 		rf.mu.Unlock()
 
 		time.Sleep(time.Duration(applyManagerIntervalMs) * time.Millisecond)
+	}
+}
+
+func (rf *Raft) runLeaderTimeoutTicker() {
+	for !rf.killed() {
+		rf.mu.Lock()
+
+		Debug(rf.me, rf.currentTerm, dTimer, "Tick")
+
+		if rf.role == Leader {
+			// TODO: don't send heartbeat too often
+			// Separate heartbeat and electionTimeout.
+			// Reset heartbeat timer when send any message // or periodically
+			// Reset election timeout when handling any message
+			rf.sendHeartbeats()
+		} else {
+			if time.Now().After(rf.nextElectionTimeout) {
+				Debug(rf.me, rf.currentTerm, dVote, "Election timeout!")
+				rf.role = Candidate
+				rf.advanceTerm(rf.currentTerm + 1)
+
+				rf.votedFor = rf.me
+				rf.votesReceived = make(map[int]void)
+				rf.votesReceived[rf.me] = member
+
+				rf.refreshElectionTimeout()
+
+				Debug(rf.me, rf.currentTerm, dVote, "Convert to Candidate with term %v", rf.currentTerm)
+
+				for peer := 0; peer < len(rf.peers); peer++ {
+					if peer == rf.me {
+						continue
+					}
+
+					args := RequestVoteArgs{
+						Term:         rf.currentTerm,
+						CandidateId:  rf.me,
+						LastLogIndex: len(rf.log) - 1,
+						LastLogTerm:  rf.log[len(rf.log)-1].Term,
+					}
+					reply := RequestVoteReply{}
+					go rf.sendRequestVote(peer, &args, &reply)
+				}
+			}
+		}
+		rf.mu.Unlock()
+
+		ms := 50 + (rand.Int63() % 300)
+		time.Sleep(time.Duration(ms) * time.Millisecond)
 	}
 }
 
