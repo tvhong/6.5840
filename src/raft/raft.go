@@ -365,10 +365,9 @@ func (rf *Raft) sendAppendEntries(peer int, args *AppendEntriesArgs, reply *Appe
 
 		rf.nextIndex[peer] = Max(args.PrevLogIndex/2, 1)
 
-		// TODO: retry
-		// retryArgs := rf.createAppendEntriesArgs(rf.nextIndex[peer], rf.log[rf.nextIndex[peer]:len(rf.log)])
-		// retryReply := AppendEntriesReply{}
-		// go rf.sendAppendEntries(peer, &retryArgs, &retryReply)
+		retryArgs := rf.createAppendEntriesArgs(peer, maxEntriesPerAppend)
+		retryReply := AppendEntriesReply{}
+		go rf.sendAppendEntries(peer, &retryArgs, &retryReply)
 	}
 
 	Debug(rf.me, rf.currentTerm, dRpc, "nextIndex[S%v]=%v", peer, rf.nextIndex[peer])
