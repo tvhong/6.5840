@@ -24,6 +24,7 @@ const (
 	dTimer  logTopic = "TIMR"
 	dVote   logTopic = "VOTE"
 	dState  logTopic = "STAT" // state change
+	dCommit logTopic = "CMMT" // commmit message
 	dClient logTopic = "CLNT" // client interactions
 )
 

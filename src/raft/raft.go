@@ -635,7 +635,7 @@ func (rf *Raft) advanceCommitIndex(commitIndex int) {
 		Fatal(rf.me, rf.currentTerm, "Trying to decrease or equate commitIndex. rf.commitIndex=%v, commitIndex=%v", rf.commitIndex, commitIndex)
 	}
 
-	Debug(rf.me, rf.currentTerm, dHandle, "Advance commit index to %v", commitIndex)
+	Debug(rf.me, rf.currentTerm, dCommit, "Advance commit index to %v", commitIndex)
 
 	rf.commitIndex = commitIndex
 	rf.applyManagerCh <- true

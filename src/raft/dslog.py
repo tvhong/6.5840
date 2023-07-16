@@ -27,6 +27,7 @@ TOPICS = {
     "SEND": "bright_green",
     "HNDL": "aquamarine1",
     "CLNT": "royal_blue1",
+    "CMMT": "sky_blue2",
 
     "TERM": "green",
     "CMIT": "magenta",
