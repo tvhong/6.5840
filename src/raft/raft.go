@@ -396,28 +396,6 @@ func (rf *Raft) sendAppendEntries(peer int, args *AppendEntriesArgs, reply *Appe
 	return ok
 }
 
-// the tester doesn't halt goroutines created by Raft after each test,
-// but it does call the Kill() method. your code can use killed() to
-// check whether Kill() has been called. the use of atomic avoids the
-// need for a lock.
-//
-// the issue is that long-running goroutines use memory and may chew
-// up CPU time, perhaps causing later tests to fail and generating
-// confusing debug output. any goroutine with a long-running loop
-// should call killed() to check whether it should stop.
-func (rf *Raft) Kill() {
-	rf.mu.Lock()
-	Debug(rf.me, rf.currentTerm, dWarn, "Raft node is being killed.")
-	rf.mu.Unlock()
-
-	atomic.StoreInt32(&rf.dead, 1)
-}
-
-func (rf *Raft) killed() bool {
-	z := atomic.LoadInt32(&rf.dead)
-	return z == 1
-}
-
 func (rf *Raft) runLeaderTimeoutTicker() {
 	for !rf.killed() {
 		rf.mu.Lock()
@@ -703,6 +681,28 @@ func (rf *Raft) Start(command interface{}) (int, int, bool) {
 	}
 
 	return len(rf.log) - 1, rf.currentTerm, true
+}
+
+// the tester doesn't halt goroutines created by Raft after each test,
+// but it does call the Kill() method. your code can use killed() to
+// check whether Kill() has been called. the use of atomic avoids the
+// need for a lock.
+//
+// the issue is that long-running goroutines use memory and may chew
+// up CPU time, perhaps causing later tests to fail and generating
+// confusing debug output. any goroutine with a long-running loop
+// should call killed() to check whether it should stop.
+func (rf *Raft) Kill() {
+	rf.mu.Lock()
+	Debug(rf.me, rf.currentTerm, dWarn, "Raft node is being killed.")
+	rf.mu.Unlock()
+
+	atomic.StoreInt32(&rf.dead, 1)
+}
+
+func (rf *Raft) killed() bool {
+	z := atomic.LoadInt32(&rf.dead)
+	return z == 1
 }
 
 func (rf *Raft) runApplyManager() {
