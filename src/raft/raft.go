@@ -20,6 +20,7 @@ package raft
 import (
 	//	"bytes"
 
+	"fmt"
 	"math/rand"
 	"sync"
 	"sync/atomic"
@@ -179,15 +180,25 @@ type RequestVoteReply struct {
 type AppendEntriesArgs struct {
 	Term         int
 	LeaderId     int
+	LeaderCommit int
 	PrevLogIndex int
 	PrevLogTerm  int
 	Entries      []LogEntry
-	LeaderCommit int
 }
 
 type AppendEntriesReply struct {
 	Term    int
 	Success bool
+}
+
+func (args *AppendEntriesArgs) String() string {
+	return fmt.Sprintf("AppendEntriesArgs{Term: %v, LeaderId: %v, LeaderCommit: %v, PrevLogIndex %v, PrevLogTerm: %v, len(Entries): %v",
+		args.Term,
+		args.LeaderId,
+		args.LeaderCommit,
+		args.PrevLogIndex,
+		args.PrevLogTerm,
+		len(args.Entries))
 }
 
 /************************************************************************
@@ -645,10 +656,10 @@ func (rf *Raft) createAppendEntriesArgs(peer int, maxEntries int) AppendEntriesA
 	return AppendEntriesArgs{
 		Term:         rf.currentTerm,
 		LeaderId:     rf.me,
+		LeaderCommit: rf.commitIndex,
 		PrevLogIndex: leftIndex - 1,
 		PrevLogTerm:  rf.log[leftIndex-1].Term,
 		Entries:      rf.log[leftIndex:rightIndex],
-		LeaderCommit: rf.commitIndex,
 	}
 }
 
