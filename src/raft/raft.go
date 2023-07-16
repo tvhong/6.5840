@@ -288,29 +288,29 @@ func (rf *Raft) sendRequestVote(peer int, args *RequestVoteArgs, reply *RequestV
 	ok := rf.peers[peer].Call("Raft.RequestVote", args, reply)
 
 	rf.mu.Lock()
+	defer rf.mu.Unlock()
 
-	if rf.currentTerm == currTerm {
-		advancedTerm := rf.maybeAdvanceTerm(reply.Term)
-
-		if reply.VoteGranted {
-			if advancedTerm {
-				Fatal(rf.me, rf.currentTerm,
-					"S%v shouldn't have voted for me if it has higher term, reply: %v", peer, reply)
-			}
-
-			rf.votesReceived[peer] = member
-
-			// Received majority votes
-			if len(rf.votesReceived) >= len(rf.peers)/2+1 {
-				Debug(rf.me, rf.currentTerm, dVote, "Receive majority votes, becoming leader. votesReceived: %v", rf.votesReceived)
-				rf.becomeLeader()
-			}
-		}
-	} else {
+	if rf.currentTerm != currTerm {
 		Debug(rf.me, rf.currentTerm, dVote, "Received RequestVote response from S%v for term %v, but this node's term has changed", peer, currTerm)
+		return ok
 	}
 
-	rf.mu.Unlock()
+	advancedTerm := rf.maybeAdvanceTerm(reply.Term)
+
+	if reply.VoteGranted {
+		if advancedTerm {
+			Fatal(rf.me, rf.currentTerm,
+				"S%v shouldn't have voted for me if it has higher term, reply: %v", peer, reply)
+		}
+
+		rf.votesReceived[peer] = member
+
+		// Received majority votes
+		if len(rf.votesReceived) >= len(rf.peers)/2+1 {
+			Debug(rf.me, rf.currentTerm, dVote, "Receive majority votes, becoming leader. votesReceived: %v", rf.votesReceived)
+			rf.becomeLeader()
+		}
+	}
 
 	return ok
 }
