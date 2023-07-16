@@ -672,9 +672,10 @@ func (rf *Raft) Start(command interface{}) (int, int, bool) {
 	rf.mu.Lock()
 	defer rf.mu.Unlock()
 
-	Debug(rf.me, rf.currentTerm, dClient, "Start a command len(rf.log)=%v", len(rf.log))
+	Debug(rf.me, rf.currentTerm, dClient, "Start a command len(rf.log)=%v. Command=%v", len(rf.log), command)
 
 	if rf.role != Leader {
+		Debug(rf.me, rf.currentTerm, dClient, "Reject command as not a leader.")
 		return -1, rf.currentTerm, false
 	}
 
