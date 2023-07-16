@@ -367,7 +367,7 @@ func (rf *Raft) sendAppendEntries(peer int, args *AppendEntriesArgs, reply *Appe
 	if reply.Success {
 		peerWrittenIndex := args.PrevLogIndex + len(args.Entries)
 		if peerWrittenIndex > rf.matchIndex[peer] {
-			Debug(rf.me, rf.currentTerm, dHandle, "Updating rf.matchIndex[S%v] to %v", peer, peerWrittenIndex)
+			Debug(rf.me, rf.currentTerm, dSend, "Updating rf.matchIndex[S%v] to %v", peer, peerWrittenIndex)
 
 			rf.matchIndex[peer] = peerWrittenIndex
 		}
