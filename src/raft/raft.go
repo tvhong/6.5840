@@ -235,12 +235,19 @@ func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply
 			"Reject AppendEntries from S%v. args.Term (%v) < rf.currentTerm (%v)", args.LeaderId, args.Term, rf.currentTerm)
 		reply.Success = false
 	} else if len(rf.log) <= args.PrevLogIndex || rf.log[args.PrevLogIndex].Term != args.PrevLogTerm {
+		var prevLogTerm int
+		if len(rf.log) > args.PrevLogIndex {
+			prevLogTerm = rf.log[args.PrevLogIndex].Term
+		} else {
+			prevLogTerm = -1
+		}
+
 		Debug(rf.me, rf.currentTerm, dHandle,
-			"Reject AppendEntries from S%v. len(rf.log) (%v) <= PrevLogIndex (%v) || rf.log[PrevLogIndex].Term (%v) != PrevLogTerm (%v)",
+			"Reject AppendEntries from S%v because prevLog mismatch. len(rf.log) (%v) <= PrevLogIndex (%v) || rf.log[PrevLogIndex].Term (%v) != PrevLogTerm (%v)",
 			args.LeaderId,
 			len(rf.log),
 			args.PrevLogIndex,
-			rf.log[args.PrevLogIndex].Term,
+			prevLogTerm,
 			args.PrevLogTerm)
 
 		reply.Success = false
