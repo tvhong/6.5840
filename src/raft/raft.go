@@ -695,7 +695,7 @@ func (rf *Raft) Start(command interface{}) (int, int, bool) {
 		go rf.sendAppendEntries(peer, &args, &reply)
 	}
 
-	return len(rf.log), rf.currentTerm, true
+	return len(rf.log) - 1, rf.currentTerm, true
 }
 
 func (rf *Raft) runApplyManager() {
@@ -708,7 +708,7 @@ func (rf *Raft) runApplyManager() {
 				Fatal(rf.me, rf.currentTerm, "rf.lastApplied > rf.commitIndex. rf.lastApplied=%v, rf.commitIndex=%v", rf.lastApplied, rf.commitIndex)
 			}
 
-			Debug(rf.me, rf.currentTerm, dClient, "Apply messages to client [rf.lastApplied=%v, rf.commitIndex=%v].", rf.lastApplied, rf.commitIndex)
+			Debug(rf.me, rf.currentTerm, dClient, "Apply messages to client from rf.lastApplied=%v to rf.commitIndex=%v.", rf.lastApplied, rf.commitIndex)
 			for i := rf.lastApplied; i <= rf.commitIndex; i++ {
 				msg := ApplyMsg{CommandValid: true, Command: rf.log[i].Command, CommandIndex: i}
 				rf.applyCh <- msg
