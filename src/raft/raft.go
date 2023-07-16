@@ -366,14 +366,11 @@ func (rf *Raft) sendAppendEntries(peer int, args *AppendEntriesArgs, reply *Appe
 
 	if reply.Success {
 		peerWrittenIndex := args.PrevLogIndex + len(args.Entries)
+		if peerWrittenIndex > rf.matchIndex[peer] {
+			Debug(rf.me, rf.currentTerm, dHandle, "Updating rf.matchIndex[S%v] to %v", peer, peerWrittenIndex)
 
-		if peerWrittenIndex < rf.matchIndex[peer] {
-			Fatal(rf.me, rf.currentTerm,
-				"Peer's written index (%v) is less than matchIndex[peer] (%v). This violates matchIndex must monotonically increas.",
-				peerWrittenIndex, rf.matchIndex[peer])
+			rf.matchIndex[peer] = peerWrittenIndex
 		}
-
-		rf.matchIndex[peer] = peerWrittenIndex
 
 		if rf.matchIndex[peer] > rf.commitIndex {
 			rf.commitIfMajorityMatches(rf.matchIndex[peer])
