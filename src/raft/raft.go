@@ -165,8 +165,10 @@ func (rf *Raft) Snapshot(index int, snapshot []byte) {
 }
 
 type RequestVoteArgs struct {
-	Term        int
-	CandidateId int
+	Term         int
+	CandidateId  int
+	LastLogIndex int
+	LastLogTerm  int
 }
 
 type RequestVoteReply struct {
@@ -415,7 +417,12 @@ func (rf *Raft) ticker() {
 						continue
 					}
 
-					args := RequestVoteArgs{Term: rf.currentTerm, CandidateId: rf.me}
+					args := RequestVoteArgs{
+						Term:         rf.currentTerm,
+						CandidateId:  rf.me,
+						LastLogIndex: len(rf.log) - 1,
+						LastLogTerm:  rf.log[len(rf.log)-1].Term,
+					}
 					reply := RequestVoteReply{}
 					go rf.sendRequestVote(peer, &args, &reply)
 
