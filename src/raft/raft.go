@@ -51,6 +51,7 @@ const (
 	electionTimeoutMinMs = 1300
 	electionTimeoutMaxMs = 1700
 
+	heartbeatIntervalMs    = 200
 	applyManagerIntervalMs = 500
 )
 
@@ -681,16 +682,9 @@ func (rf *Raft) runApplyManager() {
 func (rf *Raft) runLeaderTimeoutTicker() {
 	for !rf.killed() {
 		rf.mu.Lock()
+		if rf.role != Leader {
+			Debug(rf.me, rf.currentTerm, dTimer, "Tick: Check leader timeout")
 
-		Debug(rf.me, rf.currentTerm, dTimer, "Tick")
-
-		if rf.role == Leader {
-			// TODO: don't send heartbeat too often
-			// Separate heartbeat and electionTimeout.
-			// Reset heartbeat timer when send any message // or periodically
-			// Reset election timeout when handling any message
-			rf.sendHeartbeats()
-		} else {
 			if time.Now().After(rf.nextElectionTimeout) {
 				Debug(rf.me, rf.currentTerm, dVote, "Election timeout!")
 				rf.role = Candidate
@@ -724,6 +718,21 @@ func (rf *Raft) runLeaderTimeoutTicker() {
 
 		ms := 50 + (rand.Int63() % 300)
 		time.Sleep(time.Duration(ms) * time.Millisecond)
+	}
+}
+
+func (rf *Raft) runHeartbeatTicker() {
+	for !rf.killed() {
+		rf.mu.Lock()
+
+		if rf.role == Leader {
+			// Reset heartbeat timer when send any message // or periodically
+			// Reset election timeout when handling any message
+			rf.sendHeartbeats()
+		}
+		rf.mu.Unlock()
+
+		time.Sleep(time.Duration(heartbeatIntervalMs) * time.Millisecond)
 	}
 }
 
