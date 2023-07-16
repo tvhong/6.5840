@@ -643,6 +643,7 @@ func (rf *Raft) advanceCommitIndex(commitIndex int) {
 	Debug(rf.me, rf.currentTerm, dCommit, "Advance commit index to %v", commitIndex)
 
 	rf.commitIndex = commitIndex
+	// FIXME: this is synchronous call!!!
 	rf.applyManagerCh <- true
 }
 
@@ -713,8 +714,9 @@ func (rf *Raft) Start(command interface{}) (int, int, bool) {
 
 func (rf *Raft) runApplyManager() {
 	for !rf.killed() {
-		_, more := <-rf.applyManagerCh
-		if more {
+		ok := <-rf.applyManagerCh
+		Debug(rf.me, rf.currentTerm, dClient, "Manager waking up, ok=%v", ok)
+		if ok {
 			rf.mu.Lock()
 
 			if rf.lastApplied > rf.commitIndex {
@@ -757,7 +759,7 @@ func Make(
 	rf.persister = persister
 
 	rf.applyCh = applyCh
-	rf.applyManagerCh = make(chan bool)
+	rf.applyManagerCh = make(chan bool, 100)
 
 	rf.me = me
 
