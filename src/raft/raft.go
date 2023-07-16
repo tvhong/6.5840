@@ -319,6 +319,8 @@ func (rf *Raft) sendAppendEntries(peer int, args *AppendEntriesArgs, reply *Appe
 
 	rf.mu.Lock()
 	Debug(rf.me, rf.currentTerm, dRpc, "Send appendEntries to peer S%v. args=%+v", peer, args)
+
+	currTerm := rf.currentTerm
 	rf.mu.Unlock()
 
 	ok := rf.peers[peer].Call("Raft.AppendEntries", args, reply)
@@ -327,6 +329,11 @@ func (rf *Raft) sendAppendEntries(peer int, args *AppendEntriesArgs, reply *Appe
 	defer rf.mu.Unlock()
 
 	Debug(rf.me, rf.currentTerm, dRpc, "Handling appendEntries reply from S%v. Reply=%+v", peer, reply)
+
+	if currTerm != rf.currentTerm {
+		Debug(rf.me, rf.currentTerm, dVote, "Received AppendEntries response from S%v for term %v, but this node's term has changed", peer, currTerm)
+		return ok
+	}
 
 	advancedTerm := rf.maybeAdvanceTerm(reply.Term)
 	if advancedTerm {
