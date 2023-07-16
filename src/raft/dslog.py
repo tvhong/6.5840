@@ -25,6 +25,7 @@ TOPICS = {
     "STAT": "yellow",
     "SEND": "bright_green",
     "HNDL": "green",
+    "CLNT": "bright_cyan",
 
     "TERM": "green",
     "CMIT": "magenta",
