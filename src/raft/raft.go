@@ -367,7 +367,7 @@ func (rf *Raft) sendAppendEntries(peer int, args *AppendEntriesArgs, reply *Appe
 	if reply.Success {
 		peerWrittenIndex := args.PrevLogIndex + len(args.Entries)
 		if peerWrittenIndex > rf.matchIndex[peer] {
-			Debug(rf.me, rf.currentTerm, dSend, "Updating rf.matchIndex[S%v] to %v", peer, peerWrittenIndex)
+			Debug(rf.me, rf.currentTerm, dSend, "Updating rf.matchIndex[S%v] to %v. rf.matchIndex=%v", peer, peerWrittenIndex, rf.matchIndex)
 
 			rf.matchIndex[peer] = peerWrittenIndex
 		}
@@ -613,6 +613,7 @@ func (rf *Raft) commitIfMajorityMatches(matchIndex int) {
 			"Follower's matchIndex cannot be higher than the leader's index. matchIndex=%v, len(rf.log)=%v", matchIndex, len(rf.log))
 	}
 
+	// TODO: when re-elected, don't clear matchIndex and
 	peersWithMatchIndex := 0
 	for peer := 0; peer < len(rf.peers); peer++ {
 		if peer == rf.me {
