@@ -546,7 +546,7 @@ func (rf *Raft) maybeDeleteConflictingEntries(args *AppendEntriesArgs) {
 }
 
 func (rf *Raft) deleteConflictingEntries(conflictIndex int) {
-	if conflictIndex >= rf.commitIndex {
+	if conflictIndex <= rf.commitIndex {
 		Fatal(rf.me, rf.currentTerm,
 			"There is a conflict at or before the commitIndex. conflictIndex=%v rf.commitIndex=%v. This violates Leader Completeness property.",
 			conflictIndex,
