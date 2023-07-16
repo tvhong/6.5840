@@ -23,7 +23,8 @@ TOPICS = {
     "TIMR": "bright_black",
     "VOTE": "bright_cyan",
     "STAT": "yellow",
-    "RPC_": "bright_green",
+    "SEND": "bright_green",
+    "HNDL": "green",
 
     "TERM": "green",
     "CMIT": "magenta",

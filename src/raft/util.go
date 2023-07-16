@@ -19,7 +19,8 @@ const (
 	dLog  logTopic = "LOG1"
 	dLog2 logTopic = "LOG2"
 
-	dRpc    logTopic = "RPC_"
+	dSend   logTopic = "SEND"
+	dHandle logTopic = "HNDL"
 	dTimer  logTopic = "TIMR"
 	dVote   logTopic = "VOTE"
 	dState  logTopic = "STAT" // state change

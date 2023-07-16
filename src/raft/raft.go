@@ -215,17 +215,17 @@ func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply
 	rf.mu.Lock()
 	defer rf.mu.Unlock()
 
-	Debug(rf.me, rf.currentTerm, dRpc, "Receive AppendEntries from S%v, args: %v", args.LeaderId, args)
+	Debug(rf.me, rf.currentTerm, dHandle, "Receive AppendEntries from S%v, args: %v", args.LeaderId, args)
 
 	rf.maybeAdvanceTerm(args.Term)
 	reply.Term = rf.currentTerm
 
 	if args.Term < rf.currentTerm {
-		Debug(rf.me, rf.currentTerm, dRpc,
+		Debug(rf.me, rf.currentTerm, dHandle,
 			"Reject AppendEntries from S%v. args.Term (%v) < rf.currentTerm (%v)", args.LeaderId, args.Term, rf.currentTerm)
 		reply.Success = false
 	} else if len(rf.log) <= args.PrevLogIndex || rf.log[args.PrevLogIndex].Term != args.PrevLogTerm {
-		Debug(rf.me, rf.currentTerm, dRpc,
+		Debug(rf.me, rf.currentTerm, dHandle,
 			"Reject AppendEntries from S%v. len(rf.log) (%v) <= PrevLogIndex (%v) || rf.log[PrevLogIndex].Term (%v) != PrevLogTerm (%v)",
 			args.LeaderId,
 			len(rf.log),
@@ -239,7 +239,7 @@ func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply
 		rf.maybeAppendNewEntries(args)
 		rf.maybeAdvanceCommitIndex(args)
 
-		Debug(rf.me, rf.currentTerm, dRpc, "Accept AppendEntries from S%v", args.LeaderId)
+		Debug(rf.me, rf.currentTerm, dHandle, "Accept AppendEntries from S%v", args.LeaderId)
 		reply.Success = true
 	}
 
@@ -315,7 +315,7 @@ func (rf *Raft) sendRequestVote(peer int, args *RequestVoteArgs, reply *RequestV
 
 func (rf *Raft) sendAppendEntries(peer int, args *AppendEntriesArgs, reply *AppendEntriesReply) bool {
 	rf.mu.Lock()
-	Debug(rf.me, rf.currentTerm, dRpc, "Send appendEntries to peer S%v. args=%+v", peer, args)
+	Debug(rf.me, rf.currentTerm, dSend, "Send appendEntries to peer S%v. args=%+v", peer, args)
 	rf.mu.Unlock()
 
 	ok := rf.peers[peer].Call("Raft.AppendEntries", args, reply)
@@ -323,10 +323,10 @@ func (rf *Raft) sendAppendEntries(peer int, args *AppendEntriesArgs, reply *Appe
 	rf.mu.Lock()
 	defer rf.mu.Unlock()
 
-	Debug(rf.me, rf.currentTerm, dRpc, "Handling appendEntries reply from S%v. Reply=%+v", peer, reply)
+	Debug(rf.me, rf.currentTerm, dSend, "Handling appendEntries reply from S%v. Reply=%+v", peer, reply)
 
 	if args.Term != rf.currentTerm {
-		Debug(rf.me, rf.currentTerm, dRpc,
+		Debug(rf.me, rf.currentTerm, dSend,
 			"Received AppendEntries response from S%v for args.Term %v, but this node's term has changed. Skip handling.", peer, args.Term)
 		return ok
 	}
@@ -364,7 +364,7 @@ func (rf *Raft) sendAppendEntries(peer int, args *AppendEntriesArgs, reply *Appe
 		go rf.sendAppendEntries(peer, &retryArgs, &retryReply)
 	}
 
-	Debug(rf.me, rf.currentTerm, dRpc, "nextIndex[S%v]=%v", peer, rf.nextIndex[peer])
+	Debug(rf.me, rf.currentTerm, dSend, "nextIndex[S%v]=%v", peer, rf.nextIndex[peer])
 
 	return ok
 }
