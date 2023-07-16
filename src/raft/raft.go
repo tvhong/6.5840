@@ -276,16 +276,16 @@ func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply
 // capitalized all field names in structs passed over RPC, and
 // that the caller passes the address of the reply struct with &, not
 // the struct itself.
-func (rf *Raft) sendRequestVote(server int, args *RequestVoteArgs, reply *RequestVoteReply) bool {
+func (rf *Raft) sendRequestVote(peer int, args *RequestVoteArgs, reply *RequestVoteReply) bool {
 	rf.mu.Lock()
 
-	Debug(rf.me, rf.currentTerm, dVote, "Request vote from server S%v", server)
+	Debug(rf.me, rf.currentTerm, dVote, "Request vote from peer S%v", peer)
 
 	currTerm := rf.currentTerm
 
 	rf.mu.Unlock()
 
-	ok := rf.peers[server].Call("Raft.RequestVote", args, reply)
+	ok := rf.peers[peer].Call("Raft.RequestVote", args, reply)
 
 	rf.mu.Lock()
 
@@ -295,10 +295,10 @@ func (rf *Raft) sendRequestVote(server int, args *RequestVoteArgs, reply *Reques
 		if reply.VoteGranted {
 			if advancedTerm {
 				Fatal(rf.me, rf.currentTerm,
-					"S%v shouldn't have voted for me if it has higher term, reply: %v", server, reply)
+					"S%v shouldn't have voted for me if it has higher term, reply: %v", peer, reply)
 			}
 
-			rf.votesReceived[server] = member
+			rf.votesReceived[peer] = member
 
 			// Received majority votes
 			if len(rf.votesReceived) >= len(rf.peers)/2+1 {
@@ -307,7 +307,7 @@ func (rf *Raft) sendRequestVote(server int, args *RequestVoteArgs, reply *Reques
 			}
 		}
 	} else {
-		Debug(rf.me, rf.currentTerm, dVote, "Received RequestVote response from S%v for term %v, but this node's term has changed", server, currTerm)
+		Debug(rf.me, rf.currentTerm, dVote, "Received RequestVote response from S%v for term %v, but this node's term has changed", peer, currTerm)
 	}
 
 	rf.mu.Unlock()
