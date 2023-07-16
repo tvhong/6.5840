@@ -425,7 +425,7 @@ func (rf *Raft) sendHeartbeats() {
 			continue
 		}
 
-		args := rf.createAppendEntriesArgs(peer, 0)
+		args := rf.createAppendEntriesArgs(peer, maxEntriesPerAppend)
 		reply := AppendEntriesReply{}
 		go rf.sendAppendEntries(peer, &args, &reply)
 	}
