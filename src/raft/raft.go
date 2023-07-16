@@ -456,11 +456,6 @@ func (rf *Raft) ticker() {
 					}
 					reply := RequestVoteReply{}
 					go rf.sendRequestVote(peer, &args, &reply)
-
-					// TODO: handle reply. Track if got majority votes
-					// Create votesReceived
-					// If timeout, clear votesReceived
-					// If convert to Follower, clear votesReceived
 				}
 			}
 		}
@@ -617,7 +612,6 @@ func (rf *Raft) commitIfMajorityMatches(matchIndex int) {
 			"Follower's matchIndex cannot be higher than the leader's index. matchIndex=%v, len(rf.log)=%v", matchIndex, len(rf.log))
 	}
 
-	// TODO: when re-elected, don't clear matchIndex and
 	peersWithMatchIndex := 0
 	for peer := 0; peer < len(rf.peers); peer++ {
 		if peer == rf.me {
