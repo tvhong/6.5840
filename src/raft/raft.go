@@ -281,7 +281,7 @@ func (rf *Raft) sendRequestVote(peer int, args *RequestVoteArgs, reply *RequestV
 
 	Debug(rf.me, rf.currentTerm, dVote, "Request vote from peer S%v", peer)
 
-	currTerm := rf.currentTerm
+	initialTerm := rf.currentTerm
 
 	rf.mu.Unlock()
 
@@ -292,8 +292,8 @@ func (rf *Raft) sendRequestVote(peer int, args *RequestVoteArgs, reply *RequestV
 
 	Debug(rf.me, rf.currentTerm, dRpc, "Handling requestVote reply from S%v. Reply=%+v", peer, reply)
 
-	if rf.currentTerm != currTerm {
-		Debug(rf.me, rf.currentTerm, dVote, "Received RequestVote response from S%v for term %v, but this node's term has changed", peer, currTerm)
+	if rf.currentTerm != initialTerm {
+		Debug(rf.me, rf.currentTerm, dVote, "Received RequestVote response from S%v for term %v, but this node's term has changed", peer, initialTerm)
 		return ok
 	}
 
@@ -322,7 +322,7 @@ func (rf *Raft) sendAppendEntries(peer int, args *AppendEntriesArgs, reply *Appe
 	rf.mu.Lock()
 	Debug(rf.me, rf.currentTerm, dRpc, "Send appendEntries to peer S%v. args=%+v", peer, args)
 
-	currTerm := rf.currentTerm
+	initialTerm := rf.currentTerm
 	rf.mu.Unlock()
 
 	ok := rf.peers[peer].Call("Raft.AppendEntries", args, reply)
@@ -332,8 +332,8 @@ func (rf *Raft) sendAppendEntries(peer int, args *AppendEntriesArgs, reply *Appe
 
 	Debug(rf.me, rf.currentTerm, dRpc, "Handling appendEntries reply from S%v. Reply=%+v", peer, reply)
 
-	if currTerm != rf.currentTerm {
-		Debug(rf.me, rf.currentTerm, dVote, "Received AppendEntries response from S%v for term %v, but this node's term has changed", peer, currTerm)
+	if initialTerm != rf.currentTerm {
+		Debug(rf.me, rf.currentTerm, dVote, "Received AppendEntries response from S%v for term %v, but this node's term has changed", peer, initialTerm)
 		return ok
 	}
 
