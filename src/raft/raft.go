@@ -379,15 +379,16 @@ func (rf *Raft) sendAppendEntries(peer int, args *AppendEntriesArgs, reply *Appe
 
 		rf.nextIndex[peer] = peerWrittenIndex + 1
 	} else {
-		if args.PrevLogIndex == 0 && reply.Term != 0 {
+		// Avoid infinite retries
+		if args.PrevLogIndex != 0 {
+			rf.nextIndex[peer] = Max(args.PrevLogIndex/2, 1)
+
+			retryArgs := rf.createAppendEntriesArgs(peer, maxEntriesPerAppend)
+			retryReply := AppendEntriesReply{}
+			go rf.sendAppendEntries(peer, &retryArgs, &retryReply)
+		} else if reply.Term != 0 {
 			Fatal(rf.me, rf.currentTerm, "Follower S%v rejected AppendEntries with PrevLogIndex=%v. Reply=%+v. Potential timeout.", peer, args.PrevLogIndex, reply)
 		}
-
-		rf.nextIndex[peer] = Max(args.PrevLogIndex/2, 1)
-
-		retryArgs := rf.createAppendEntriesArgs(peer, maxEntriesPerAppend)
-		retryReply := AppendEntriesReply{}
-		go rf.sendAppendEntries(peer, &retryArgs, &retryReply)
 	}
 
 	Debug(rf.me, rf.currentTerm, dSend, "nextIndex[S%v]=%v", peer, rf.nextIndex[peer])
