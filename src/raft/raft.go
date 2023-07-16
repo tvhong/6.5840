@@ -290,6 +290,8 @@ func (rf *Raft) sendRequestVote(peer int, args *RequestVoteArgs, reply *RequestV
 	rf.mu.Lock()
 	defer rf.mu.Unlock()
 
+	Debug(rf.me, rf.currentTerm, dRpc, "Handling requestVote reply from S%v. Reply=%+v", peer, reply)
+
 	if rf.currentTerm != currTerm {
 		Debug(rf.me, rf.currentTerm, dVote, "Received RequestVote response from S%v for term %v, but this node's term has changed", peer, currTerm)
 		return ok
