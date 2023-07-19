@@ -18,15 +18,14 @@ package raft
 //
 
 import (
-	//	"bytes"
-
+	"bytes"
 	"fmt"
 	"math/rand"
 	"sync"
 	"sync/atomic"
 	"time"
 
-	//	"6.5840/labgob"
+	"6.5840/labgob"
 	"6.5840/labrpc"
 )
 
@@ -149,19 +148,13 @@ func (rf *Raft) readPersist(data []byte) {
 		return
 	}
 
-	// Your code here (2C).
-	// Example:
-	// r := bytes.NewBuffer(data)
-	// d := labgob.NewDecoder(r)
-	// var xxx
-	// var yyy
-	// if d.Decode(&xxx) != nil ||
-	//    d.Decode(&yyy) != nil {
-	//   error...
-	// } else {
-	//   rf.xxx = xxx
-	//   rf.yyy = yyy
-	// }
+	buffer := bytes.NewBuffer(data)
+	decoder := labgob.NewDecoder(buffer)
+	if decoder.Decode(&rf) != nil {
+		Fatal(-1, -1, "Failed to read decode persisted Raft state.")
+	} else {
+		Debug(rf.me, rf.currentTerm, dLog, "Successfully read state from persister")
+	}
 }
 
 // the service says it has created a snapshot that has
