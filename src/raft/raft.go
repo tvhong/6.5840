@@ -711,11 +711,12 @@ func (rf *Raft) runLeaderTimeoutTicker() {
 			if time.Now().After(rf.nextElectionTimeout) {
 				Debug(rf.me, rf.currentTerm, dVote, "Election timeout!")
 				rf.role = Candidate
-				rf.advanceTerm(rf.currentTerm + 1)
 
 				rf.votedFor = rf.me
 				rf.votesReceived = make(map[int]void)
 				rf.votesReceived[rf.me] = member
+
+				rf.advanceTerm(rf.currentTerm + 1)
 
 				rf.refreshElectionTimeout()
 
