@@ -443,6 +443,8 @@ func (rf *Raft) maybeAdvanceTerm(term int) bool {
 	if shouldAdvance {
 		Debug(rf.me, rf.currentTerm, dState, "Receive newer term %v > %v. Converting to Follower.", term, rf.currentTerm)
 		rf.advanceTerm(term)
+		rf.persist()
+
 		prevRole := rf.role
 		rf.role = Follower
 
@@ -462,8 +464,6 @@ func (rf *Raft) advanceTerm(term int) {
 	rf.currentTerm = term
 	rf.votedFor = -1
 	rf.votesReceived = nil
-
-	rf.persist()
 }
 
 func (rf *Raft) becomeLeader() {
@@ -714,11 +714,13 @@ func (rf *Raft) runLeaderTimeoutTicker() {
 				Debug(rf.me, rf.currentTerm, dVote, "Election timeout!")
 				rf.role = Candidate
 
+				rf.advanceTerm(rf.currentTerm + 1)
+
 				rf.votedFor = rf.me
 				rf.votesReceived = make(map[int]void)
 				rf.votesReceived[rf.me] = member
 
-				rf.advanceTerm(rf.currentTerm + 1)
+				rf.persist()
 
 				rf.refreshElectionTimeout()
 
