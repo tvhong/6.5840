@@ -53,7 +53,7 @@ const (
 
 	heartbeatIntervalMs = 100
 
-	applyManagerIntervalMs = 200
+	applyManagerIntervalMs = 10
 )
 
 const (
