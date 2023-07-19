@@ -134,14 +134,13 @@ func (rf *Raft) GetState() (int, bool) {
 // after you've implemented snapshots, pass the current snapshot
 // (or nil if there's not yet a snapshot).
 func (rf *Raft) persist() {
-	// Your code here (2C).
-	// Example:
-	// w := new(bytes.Buffer)
-	// e := labgob.NewEncoder(w)
-	// e.Encode(rf.xxx)
-	// e.Encode(rf.yyy)
-	// raftstate := w.Bytes()
-	// rf.persister.Save(raftstate, nil)
+	buffer := new(bytes.Buffer)
+	encoder := labgob.NewEncoder(buffer)
+
+	// TODO: write log more efficiently
+	encoder.Encode(RaftPersistent{currentTerm: rf.currentTerm, votedFor: rf.votedFor, log: rf.log})
+	raftstate := buffer.Bytes()
+	rf.persister.Save(raftstate, nil)
 }
 
 // restore previously persisted state.
