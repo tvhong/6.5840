@@ -142,8 +142,13 @@ func (rf *Raft) persist() {
 // restore previously persisted state.
 func (rf *Raft) readPersist(data []byte) {
 	if data == nil || len(data) < 1 { // bootstrap without any state?
+		rf.currentTerm = 0
+		rf.votedFor = -1
+		rf.log = append(rf.log, LogEntry{Term: 0})
+
 		return
 	}
+
 	// Your code here (2C).
 	// Example:
 	// r := bytes.NewBuffer(data)
@@ -758,6 +763,8 @@ func Make(
 	applyCh chan ApplyMsg) *Raft {
 
 	rf := &Raft{}
+	rf.readPersist(persister.ReadRaftState())
+
 	rf.peers = peers
 	rf.persister = persister
 
@@ -766,10 +773,6 @@ func Make(
 	rf.me = me
 
 	rf.role = Follower
-	rf.currentTerm = 0
-	rf.votedFor = -1
-
-	rf.log = append(rf.log, LogEntry{Term: 0})
 	rf.commitIndex = 0
 	rf.lastApplied = 0
 
@@ -777,10 +780,6 @@ func Make(
 	rf.matchIndex = make([]int, 0)
 
 	rf.initElectionTimeout()
-
-	// TODO (2C): read from persisted states
-	// initialize from state persisted before a crash
-	rf.readPersist(persister.ReadRaftState())
 
 	Debug(rf.me, rf.currentTerm, dLog, "Hello World!")
 
