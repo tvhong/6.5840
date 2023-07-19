@@ -635,6 +635,8 @@ func (rf *Raft) Start(command interface{}) (int, int, bool) {
 
 	Debug(rf.me, rf.currentTerm, dClient, "Start AppendEntries.")
 	rf.log = append(rf.log, LogEntry{Term: rf.currentTerm, Command: command})
+	rf.persist()
+
 	for peer := 0; peer < len(rf.peers); peer++ {
 		if peer == rf.me {
 			continue
