@@ -275,10 +275,10 @@ func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply
 		reply.Success = false
 	} else {
 		hasConflict := rf.maybeDeleteConflictingEntries(args)
-		rf.maybeAppendNewEntries(args)
+		hasNewEntries := rf.maybeAppendNewEntries(args)
 		rf.maybeAdvanceCommitIndex(args)
 
-		if hasConflict {
+		if hasConflict || hasNewEntries {
 			rf.persist()
 		}
 
@@ -532,9 +532,10 @@ func (rf *Raft) findConflictIndex(args *AppendEntriesArgs) (bool, int) {
 	return conflictIndex != -1, conflictIndex
 }
 
-func (rf *Raft) maybeAppendNewEntries(args *AppendEntriesArgs) {
+func (rf *Raft) maybeAppendNewEntries(args *AppendEntriesArgs) bool {
 	newEntryIndex := len(rf.log) - (args.PrevLogIndex + 1)
-	if newEntryIndex < len(args.Entries) {
+	hasNewEntries := newEntryIndex < len(args.Entries)
+	if hasNewEntries {
 		preAppendLength := len(rf.log)
 		// FIXME
 		rf.log = append(rf.log, args.Entries[newEntryIndex:]...)
@@ -542,6 +543,8 @@ func (rf *Raft) maybeAppendNewEntries(args *AppendEntriesArgs) {
 		Debug(rf.me, rf.currentTerm, dHandle,
 			"Appending new entries from leader S%v. preAppendLength: %v, postApendLength: %v", args.LeaderId, preAppendLength, len(rf.log))
 	}
+
+	return hasNewEntries
 }
 
 func (rf *Raft) maybeAdvanceCommitIndex(args *AppendEntriesArgs) {
