@@ -361,7 +361,6 @@ func (rf *Raft) sendAppendEntries(peer int, args *AppendEntriesArgs, reply *Appe
 	Debug(rf.me, rf.currentTerm, dSend, "Send appendEntries to peer S%v. args=%+v", peer, args)
 	rf.mu.Unlock()
 
-	// FIXME
 	ok := rf.peers[peer].Call("Raft.AppendEntries", args, reply)
 
 	rf.mu.Lock()
@@ -537,8 +536,8 @@ func (rf *Raft) maybeAppendNewEntries(args *AppendEntriesArgs) bool {
 	hasNewEntries := newEntryIndex < len(args.Entries)
 	if hasNewEntries {
 		preAppendLength := len(rf.log)
-		// FIXME
-		rf.log = append(rf.log, args.Entries[newEntryIndex:]...)
+		newEntries := args.Entries[newEntryIndex:]
+		rf.log = append(rf.log, newEntries...)
 
 		Debug(rf.me, rf.currentTerm, dHandle,
 			"Appending new entries from leader S%v. preAppendLength: %v, postApendLength: %v", args.LeaderId, preAppendLength, len(rf.log))
