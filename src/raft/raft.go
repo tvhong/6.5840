@@ -45,14 +45,15 @@ const (
 // Tester limits 10 heartbeat per second, and expects new leader to be elected
 // within 5s of failure
 const (
-	initElectionTimeoutMinMs = 100
-	initElectionTimeoutMaxMs = 300
+	initElectionTimeoutMinMs = 0
+	initElectionTimeoutMaxMs = 200
 
-	electionTimeoutMinMs = 1300
-	electionTimeoutMaxMs = 1700
+	electionTimeoutMinMs = 600
+	electionTimeoutMaxMs = 800
 
-	heartbeatIntervalMs    = 200
-	applyManagerIntervalMs = 500
+	heartbeatIntervalMs = 100
+
+	applyManagerIntervalMs = 200
 )
 
 const (
