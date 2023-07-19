@@ -457,6 +457,8 @@ func (rf *Raft) advanceTerm(term int) {
 	rf.currentTerm = term
 	rf.votedFor = -1
 	rf.votesReceived = nil
+
+	rf.persist()
 }
 
 func (rf *Raft) becomeLeader() {
