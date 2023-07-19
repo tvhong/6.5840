@@ -80,6 +80,12 @@ type ApplyMsg struct {
 	SnapshotIndex int
 }
 
+type RaftPersistent struct {
+	currentTerm int // The latest term the server has seen
+	votedFor    int // The peer that this node voted for, -1 means not voted for any node
+	log         []LogEntry
+}
+
 // A Go object implementing a single Raft peer.
 type Raft struct {
 	// persistent
@@ -150,9 +156,14 @@ func (rf *Raft) readPersist(data []byte) {
 
 	buffer := bytes.NewBuffer(data)
 	decoder := labgob.NewDecoder(buffer)
-	if decoder.Decode(&rf) != nil {
+	var state RaftPersistent
+	if decoder.Decode(&state) != nil {
 		Fatal(-1, -1, "Failed to read decode persisted Raft state.")
 	} else {
+		rf.currentTerm = state.currentTerm
+		rf.votedFor = state.votedFor
+		rf.log = state.log
+
 		Debug(rf.me, rf.currentTerm, dLog, "Successfully read state from persister")
 	}
 }
