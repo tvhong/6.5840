@@ -48,8 +48,8 @@ const (
 	initElectionTimeoutMinMs = 0
 	initElectionTimeoutMaxMs = 200
 
-	electionTimeoutMinMs = 600
-	electionTimeoutMaxMs = 800
+	electionTimeoutMinMs = 1000
+	electionTimeoutMaxMs = 1200
 
 	heartbeatIntervalMs = 100
 
