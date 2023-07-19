@@ -238,6 +238,8 @@ func (rf *Raft) RequestVote(args *RequestVoteArgs, reply *RequestVoteReply) {
 		Debug(rf.me, rf.currentTerm, dVote, "Vote for S%v", args.CandidateId)
 		rf.votedFor = args.CandidateId
 		rf.refreshElectionTimeout()
+
+		rf.persist()
 	} else {
 		Debug(rf.me, rf.currentTerm, dVote, "Do not vote for server S%v", args.CandidateId)
 	}
