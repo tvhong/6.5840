@@ -84,17 +84,17 @@ type ApplyMsg struct {
 // A Go object implementing a single Raft peer.
 type Raft struct {
 	// persistent
-	me          int                 // this peer's index into peers[]
-	peers       []*labrpc.ClientEnd // RPC end points of all peers
-	currentTerm int                 // The latest term the server has seen
-	votedFor    int                 // The peer that this node voted for, -1 means not voted for any node
+	currentTerm int // The latest term the server has seen
+	votedFor    int // The peer that this node voted for, -1 means not voted for any node
 	log         []LogEntry
 
 	// volatile
-	mu                  sync.Mutex // Lock to protect shared access to this peer's state
-	persister           *Persister // Object to hold this peer's persisted state
-	dead                int32      // set by Kill()
-	role                Role       // The role of this node
+	me                  int                 // this peer's index into peers[]
+	peers               []*labrpc.ClientEnd // RPC end points of all peers
+	mu                  sync.Mutex          // Lock to protect shared access to this peer's state
+	persister           *Persister          // Object to hold this peer's persisted state
+	dead                int32               // set by Kill()
+	role                Role                // The role of this node
 	nextElectionTimeout time.Time
 	votesReceived       map[int]void // Set containing the votes received, elements are server ids
 
