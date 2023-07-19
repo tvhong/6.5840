@@ -274,9 +274,13 @@ func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply
 
 		reply.Success = false
 	} else {
-		rf.maybeDeleteConflictingEntries(args)
+		hasConflict := rf.maybeDeleteConflictingEntries(args)
 		rf.maybeAppendNewEntries(args)
 		rf.maybeAdvanceCommitIndex(args)
+
+		if hasConflict {
+			rf.persist()
+		}
 
 		Debug(rf.me, rf.currentTerm, dHandle, "Accept AppendEntries from S%v. args=%+v", args.LeaderId, args)
 		reply.Success = true
@@ -474,7 +478,7 @@ func (rf *Raft) becomeLeader() {
 	rf.sendHeartbeats()
 }
 
-func (rf *Raft) maybeDeleteConflictingEntries(args *AppendEntriesArgs) {
+func (rf *Raft) maybeDeleteConflictingEntries(args *AppendEntriesArgs) bool {
 	var hasConflict bool
 	var conflictIndex int
 	hasConflict, conflictIndex = rf.findConflictIndex(args)
@@ -482,6 +486,8 @@ func (rf *Raft) maybeDeleteConflictingEntries(args *AppendEntriesArgs) {
 	if hasConflict {
 		rf.deleteConflictingEntries(conflictIndex)
 	}
+
+	return hasConflict
 }
 
 func (rf *Raft) deleteConflictingEntries(conflictIndex int) {
