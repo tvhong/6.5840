@@ -763,14 +763,13 @@ func Make(
 	applyCh chan ApplyMsg) *Raft {
 
 	rf := &Raft{}
+	rf.peers = peers
+	rf.me = me
+
+	rf.persister = persister
 	rf.readPersist(persister.ReadRaftState())
 
-	rf.peers = peers
-	rf.persister = persister
-
 	rf.applyCh = applyCh
-
-	rf.me = me
 
 	rf.role = Follower
 	rf.commitIndex = 0
