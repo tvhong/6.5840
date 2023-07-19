@@ -81,9 +81,9 @@ type ApplyMsg struct {
 }
 
 type RaftPersistentState struct {
-	currentTerm int // The latest term the server has seen
-	votedFor    int // The peer that this node voted for, -1 means not voted for any node
-	log         []LogEntry
+	CurrentTerm int // The latest term the server has seen
+	VotedFor    int // The peer that this node voted for, -1 means not voted for any node
+	Log         []LogEntry
 }
 
 // A Go object implementing a single Raft peer.
@@ -138,7 +138,7 @@ func (rf *Raft) persist() {
 	encoder := labgob.NewEncoder(buffer)
 
 	// TODO: write log more efficiently
-	encoder.Encode(RaftPersistentState{currentTerm: rf.currentTerm, votedFor: rf.votedFor, log: rf.log})
+	encoder.Encode(RaftPersistentState{rf.currentTerm, rf.votedFor, rf.log})
 	raftstate := buffer.Bytes()
 	rf.persister.Save(raftstate, nil)
 }
@@ -159,9 +159,9 @@ func (rf *Raft) readPersist(data []byte) {
 	if decoder.Decode(&raftState) != nil {
 		Fatal(-1, -1, "Failed to read decode persisted Raft state.")
 	} else {
-		rf.currentTerm = raftState.currentTerm
-		rf.votedFor = raftState.votedFor
-		rf.log = raftState.log
+		rf.currentTerm = raftState.CurrentTerm
+		rf.votedFor = raftState.VotedFor
+		rf.log = raftState.Log
 
 		Debug(rf.me, rf.currentTerm, dLog, "Successfully read state from persister")
 	}
