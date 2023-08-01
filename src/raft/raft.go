@@ -602,13 +602,16 @@ func (rf *Raft) createAppendEntriesArgs(peer int, maxEntries int) AppendEntriesA
 		Fatal(rf.me, rf.currentTerm, "unexpected: leftIndex (%v) > len(rf.log) (%v).", leftIndex, len(rf.log))
 	}
 
+	entries := make([]LogEntry, rightIndex-leftIndex)
+	copy(entries, rf.log[leftIndex:rightIndex])
+
 	return AppendEntriesArgs{
 		Term:         rf.currentTerm,
 		LeaderId:     rf.me,
 		LeaderCommit: rf.commitIndex,
 		PrevLogIndex: leftIndex - 1,
 		PrevLogTerm:  rf.log[leftIndex-1].Term,
-		Entries:      rf.log[leftIndex:rightIndex],
+		Entries:      entries,
 	}
 }
 
